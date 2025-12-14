@@ -2,11 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 )
@@ -46,19 +43,7 @@ func main() {
 		logger: logger,
 	}
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-
-	logger.LogInfo("starting server", map[string]string{
-		"addr": srv.Addr,
-		"env":  cfg.env,
-	})
-	err := srv.ListenAndServe()
+	err := app.serve()
 	if err != nil {
 		logger.LogFatal(err, nil)
 	}
