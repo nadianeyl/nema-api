@@ -7,5 +7,5 @@ func (app *application) routes() http.Handler {
 
 	router.HandleFunc("/v1/healthcheck", app.healthcheckHandler)
 
-	return app.enableCORS(app.requestLogger(router))
+	return app.recoverPanic(app.enableCORS(app.requestLogger(router)))
 }
