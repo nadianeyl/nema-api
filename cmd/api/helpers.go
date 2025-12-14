@@ -5,10 +5,14 @@ import (
 	"net/http"
 )
 
-type envelope map[string]any
+func (app *application) writeJSON(w http.ResponseWriter, status Status, data any, headers http.Header) error {
+	res := Response{
+		Status:  status.Code,
+		Message: status.Message,
+		Data:    data,
+	}
 
-func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
-	jsonBytes, err := json.Marshal(data)
+	jsonBytes, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
@@ -20,7 +24,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
+	w.WriteHeader(status.HTTPStatus)
 	w.Write(jsonBytes)
 
 	return nil
