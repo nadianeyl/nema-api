@@ -1,11 +1,11 @@
-package main
+package api
 
 import (
 	"encoding/json"
 	"net/http"
 )
 
-func (app *application) writeJSON(w http.ResponseWriter, status Status, data any, headers http.Header) error {
+func (app *Application) writeJSON(w http.ResponseWriter, status Status, data any, headers http.Header) error {
 	res := Response{
 		Status:  status.Code,
 		Message: status.Message,

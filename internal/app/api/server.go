@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -10,13 +10,28 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/nadianeyl/nema-api/internal/config"
+	"github.com/nadianeyl/nema-api/internal/jsonlog"
 )
 
-func (app *application) serve() error {
+type Application struct {
+	Config config.Config
+	Logger *jsonlog.Logger
+}
+
+func New(cfg config.Config, logger *jsonlog.Logger) *Application {
+	return &Application{
+		Config: cfg,
+		Logger: logger,
+	}
+}
+
+func (app *Application) Serve() error {
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.config.port),
+		Addr:         fmt.Sprintf(":%d", app.Config.Port),
 		Handler:      app.routes(),
-		ErrorLog:     log.New(app.logger, "", 0),
+		ErrorLog:     log.New(app.Logger, "", 0),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -30,7 +45,7 @@ func (app *application) serve() error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 		s := <-quit
-		app.logger.LogInfo("shutting down server", map[string]string{
+		app.Logger.LogInfo("shutting down server", map[string]string{
 			"signal": s.String(),
 		})
 
@@ -40,9 +55,9 @@ func (app *application) serve() error {
 		shutdownError <- srv.Shutdown(ctx)
 	}()
 
-	app.logger.LogInfo("starting server", map[string]string{
+	app.Logger.LogInfo("starting server", map[string]string{
 		"addr": srv.Addr,
-		"env":  app.config.env,
+		"env":  app.Config.Env,
 	})
 
 	err := srv.ListenAndServe()
@@ -55,7 +70,7 @@ func (app *application) serve() error {
 		return err
 	}
 
-	app.logger.LogInfo("stopped server", map[string]string{
+	app.Logger.LogInfo("stopped server", map[string]string{
 		"addr": srv.Addr,
 	})
 

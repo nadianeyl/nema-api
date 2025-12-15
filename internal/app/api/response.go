@@ -1,8 +1,8 @@
-package main
+package api
 
 import "net/http"
 
-type envelope map[string]any
+type Envelope map[string]any
 
 type Response struct {
 	Status  string `json:"status"`
