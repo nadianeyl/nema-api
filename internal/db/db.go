@@ -9,13 +9,15 @@ import (
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 )
 
-func Init(cfg config.Config, logger *jsonlog.Logger) {
+func Init(cfg config.Config, logger *jsonlog.Logger) *sql.DB {
 	db, err := OpenDB(cfg)
 	if err != nil {
 		logger.LogFatal(err, nil)
 	}
 	defer db.Close()
+
 	logger.LogInfo("database connection pool established", nil)
+	return db
 }
 
 func OpenDB(cfg config.Config) (*sql.DB, error) {

@@ -22,7 +22,9 @@ type Config struct {
 	}
 }
 
-func Init(cfg *Config) {
+func Init() Config {
+	var cfg Config
+
 	flag.IntVar(&cfg.Port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 
@@ -37,4 +39,6 @@ func Init(cfg *Config) {
 	})
 
 	flag.Parse()
+
+	return cfg
 }

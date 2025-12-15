@@ -4,10 +4,11 @@ import (
 	"net/http"
 
 	"github.com/nadianeyl/nema-api/internal/config"
+	"github.com/nadianeyl/nema-api/internal/httputil"
 )
 
 func (app *Application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-	data := Envelope{
+	data := httputil.Envelope{
 		"service_status": "available",
 		"system_info": map[string]string{
 			"environment": app.Config.Env,
@@ -15,8 +16,8 @@ func (app *Application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		},
 	}
 
-	err := app.writeJSON(w, StatusSuccess, data, nil)
+	err := app.HTTPUtil.WriteJSON(w, httputil.StatusSuccess, data, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		app.HTTPUtil.ServerErrorResponse(w, r, err)
 	}
 }

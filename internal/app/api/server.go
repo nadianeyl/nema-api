@@ -12,18 +12,26 @@ import (
 	"time"
 
 	"github.com/nadianeyl/nema-api/internal/config"
+	"github.com/nadianeyl/nema-api/internal/httputil"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
+	"github.com/nadianeyl/nema-api/internal/middleware"
 )
 
 type Application struct {
-	Config config.Config
-	Logger *jsonlog.Logger
+	Config     config.Config
+	Logger     *jsonlog.Logger
+	Middleware middleware.Middleware
+	HTTPUtil   httputil.HTTPUtil
 }
 
-func New(cfg config.Config, logger *jsonlog.Logger) *Application {
+func NewApp(cfg config.Config, logger *jsonlog.Logger) *Application {
+	hu := httputil.New(logger)
+
 	return &Application{
-		Config: cfg,
-		Logger: logger,
+		Config:     cfg,
+		Logger:     logger,
+		Middleware: middleware.New(cfg, logger, hu),
+		HTTPUtil:   hu,
 	}
 }
 

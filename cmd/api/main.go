@@ -12,15 +12,11 @@ import (
 )
 
 func main() {
-	var cfg config.Config
-	config.Init(&cfg)
-
+	cfg := config.Init()
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+	_ = db.Init(cfg, logger)
 
-	db.Init(cfg, logger)
-
-	app := api.New(cfg, logger)
-
+	app := api.NewApp(cfg, logger)
 	err := app.Serve()
 	if err != nil {
 		logger.LogFatal(err, nil)

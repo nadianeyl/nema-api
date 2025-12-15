@@ -1,13 +1,31 @@
-package api
+package middleware
 
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/nadianeyl/nema-api/internal/config"
+	"github.com/nadianeyl/nema-api/internal/httputil"
+	"github.com/nadianeyl/nema-api/internal/jsonlog"
 )
 
-func (app *Application) requestLogger(next http.Handler) http.Handler {
+type Middleware struct {
+	Config   config.Config
+	Logger   *jsonlog.Logger
+	HTTPUtil httputil.HTTPUtil
+}
+
+func New(cfg config.Config, logger *jsonlog.Logger, httpUtil httputil.HTTPUtil) Middleware {
+	return Middleware{
+		Config:   cfg,
+		Logger:   logger,
+		HTTPUtil: httpUtil,
+	}
+}
+
+func (m *Middleware) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.Logger.LogInfo("request", map[string]string{
+		m.Logger.LogInfo("request", map[string]string{
 			"network_address": r.RemoteAddr,
 			"protocol":        r.Proto,
 			"request_method":  r.Method,
@@ -18,7 +36,7 @@ func (app *Application) requestLogger(next http.Handler) http.Handler {
 	})
 }
 
-func (app *Application) enableCORS(next http.Handler) http.Handler {
+func (m *Middleware) EnableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Origin")
 		w.Header().Add("Vary", "Access-Control-Request-Method")
@@ -26,8 +44,8 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		if origin != "" {
-			for i := range app.Config.Cors.TrustedOrigins {
-				if origin == app.Config.Cors.TrustedOrigins[i] {
+			for i := range m.Config.Cors.TrustedOrigins {
+				if origin == m.Config.Cors.TrustedOrigins[i] {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
 
 					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
@@ -48,12 +66,12 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-func (app *Application) recoverPanic(next http.Handler) http.Handler {
+func (m *Middleware) RecoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
-				app.serverErrorResponse(w, r, fmt.Errorf("%s", err))
+				m.HTTPUtil.ServerErrorResponse(w, r, fmt.Errorf("%s", err))
 			}
 		}()
 
