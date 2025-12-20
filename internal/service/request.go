@@ -10,6 +10,7 @@ type RegisterUserRequest struct {
 
 func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(email != "", "email", "email is required")
+	v.Check(validator.Matches(email, validator.EmailRX), "email", "email is invalid")
 }
 
 func ValidatePasswordPlaintext(v *validator.Validator, password string) {
