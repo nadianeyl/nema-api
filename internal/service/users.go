@@ -1,14 +1,19 @@
 package service
 
-import "github.com/nadianeyl/nema-api/internal/repository"
+import (
+	"github.com/nadianeyl/nema-api/internal/mailer"
+	"github.com/nadianeyl/nema-api/internal/repository"
+)
 
 type UserService struct {
 	UserRepo repository.UserRepository
+	Mailer   mailer.Mailer
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(userRepo repository.UserRepository, m mailer.Mailer) UserService {
 	return UserService{
 		UserRepo: userRepo,
+		Mailer:   m,
 	}
 }
 
@@ -26,6 +31,11 @@ func (s *UserService) Register(req *RegisterUserRequest) (*RegisterUserResponse,
 	}
 
 	err = s.UserRepo.Insert(user)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.Mailer.Send(user.Email, "user_welcome.tmpl", user)
 	if err != nil {
 		return nil, err
 	}

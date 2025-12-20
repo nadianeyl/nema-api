@@ -3,24 +3,26 @@ package main
 import (
 	"os"
 
+	_ "github.com/lib/pq"
+
 	"github.com/nadianeyl/nema-api/internal/app/api"
 	"github.com/nadianeyl/nema-api/internal/config"
 	"github.com/nadianeyl/nema-api/internal/db"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
+	"github.com/nadianeyl/nema-api/internal/mailer"
 	"github.com/nadianeyl/nema-api/internal/repository"
 	"github.com/nadianeyl/nema-api/internal/service"
-
-	_ "github.com/lib/pq"
 )
 
 func main() {
 	cfg := config.Init()
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+	mailer := mailer.New(cfg, logger)
 	db := db.Init(cfg, logger)
 	defer db.Close()
 
 	repositories := repository.NewRepositories(db, logger)
-	services := service.NewServices(repositories)
+	services := service.NewServices(repositories, mailer)
 	app := api.NewApp(cfg, logger, services)
 
 	err := app.Serve()

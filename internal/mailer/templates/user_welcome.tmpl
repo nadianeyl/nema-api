@@ -1,0 +1,71 @@
+{{define "subject"}}Welcome to NEMA!{{end}}
+
+{{define "plainBody"}}
+Hi there,
+
+Welcome aboard! 🎉
+Thank you for signing up. We're excited to have you with us.
+
+Your account has been successfully created. To complete your registration and activate your account, please use the activation token below:
+
+[ACTIVATION_TOKEN]
+
+Enter this token in the activation page of the app to verify your account. Once activated, you'll be able to access all features and start using the platform right away.
+
+If you did not create this account, you can safely ignore this email.
+
+Please note that this is a one-time use token and it will expire in 3 days.
+
+Once again, welcome. We're glad you're here!
+
+
+Best regards,
+
+The NEMA Team
+{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Welcome to NEMA</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f8fb; font-family: Calibri, Helvetica, sans-serif;">
+  <div style="max-width:600px; margin:0 auto; padding:24px;">
+    <div style="background-color:#ffffff; border-radius:6px; padding:24px; color:#333333; font-size:18px; line-height:1.6;">
+      <p>Hi there,</p>
+      <p>
+        <strong>Welcome aboard! 🎉</strong><br />
+        Thank you for signing up. We're excited to have you with us.
+      </p>
+      <p>
+        Your account has been successfully created. To complete your registration and activate your account,
+        please use the activation token below:
+      </p>
+      <div style="background-color:#f0f4f7; padding:12px; border-radius:4px; text-align:center; font-size:20px; letter-spacing:1px; margin:16px 0;">
+        <strong>[ACTIVATION_TOKEN]</strong>
+      </div>
+      <p>
+        Enter this token on the activation page of the app to verify your account.
+        Once activated, you'll be able to access all features and start using the platform right away.
+      </p>
+      <p>
+        If you did not create this account, you can safely ignore this email.
+      </p>
+      <p style="color:#666666; font-size:16px;">
+        <em>Please note that this is a one-time use token and it will expire in <strong>3 days</strong>.</em>
+      </p>
+      <p>
+        Once again, welcome. We're glad you're here!
+      </p>
+      <p style="margin-top:32px;">
+        Best regards,<br />
+        <strong>The NEMA Team</strong>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+{{end}}
