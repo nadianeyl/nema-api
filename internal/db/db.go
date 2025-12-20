@@ -14,7 +14,6 @@ func Init(cfg config.Config, logger *jsonlog.Logger) *sql.DB {
 	if err != nil {
 		logger.LogFatal(err, nil)
 	}
-	defer db.Close()
 
 	logger.LogInfo("database connection pool established", nil)
 	return db

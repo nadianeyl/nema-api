@@ -15,6 +15,7 @@ import (
 	"github.com/nadianeyl/nema-api/internal/httputil"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 	"github.com/nadianeyl/nema-api/internal/middleware"
+	"github.com/nadianeyl/nema-api/internal/service"
 )
 
 type Application struct {
@@ -22,9 +23,10 @@ type Application struct {
 	Logger     *jsonlog.Logger
 	Middleware middleware.Middleware
 	HTTPUtil   httputil.HTTPUtil
+	Services   service.Services
 }
 
-func NewApp(cfg config.Config, logger *jsonlog.Logger) *Application {
+func NewApp(cfg config.Config, logger *jsonlog.Logger, services service.Services) *Application {
 	hu := httputil.New(logger)
 
 	return &Application{
@@ -32,6 +34,7 @@ func NewApp(cfg config.Config, logger *jsonlog.Logger) *Application {
 		Logger:     logger,
 		Middleware: middleware.New(cfg, logger, hu),
 		HTTPUtil:   hu,
+		Services:   services,
 	}
 }
 
