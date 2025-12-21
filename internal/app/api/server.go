@@ -19,32 +19,32 @@ import (
 	"github.com/nadianeyl/nema-api/internal/service"
 )
 
-type Application struct {
-	Config     config.Config
-	Logger     *jsonlog.Logger
-	Middleware middleware.Middleware
-	HTTPUtil   httputil.HTTPUtil
-	Services   service.Services
+type application struct {
+	config     config.Config
+	logger     *jsonlog.Logger
+	middleware middleware.Middleware
+	httpUtil   httputil.HTTPUtil
+	services   service.Services
 	wg         sync.WaitGroup
 }
 
-func NewApp(cfg config.Config, logger *jsonlog.Logger, services service.Services) *Application {
-	hu := httputil.New(logger)
+func NewApp(cfg config.Config, l *jsonlog.Logger, s service.Services) *application {
+	hu := httputil.New(l)
 
-	return &Application{
-		Config:     cfg,
-		Logger:     logger,
-		Middleware: middleware.New(cfg, logger, hu),
-		HTTPUtil:   hu,
-		Services:   services,
+	return &application{
+		config:     cfg,
+		logger:     l,
+		middleware: middleware.New(cfg, l, hu, s.Users),
+		httpUtil:   hu,
+		services:   s,
 	}
 }
 
-func (app *Application) Serve() error {
+func (app *application) Serve() error {
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.Config.Port),
+		Addr:         fmt.Sprintf(":%d", app.config.Port),
 		Handler:      app.routes(),
-		ErrorLog:     log.New(app.Logger, "", 0),
+		ErrorLog:     log.New(app.logger, "", 0),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -58,7 +58,7 @@ func (app *Application) Serve() error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 		s := <-quit
-		app.Logger.LogInfo("shutting down server", map[string]string{
+		app.logger.LogInfo("shutting down server", map[string]string{
 			"signal": s.String(),
 		})
 
@@ -70,7 +70,7 @@ func (app *Application) Serve() error {
 			shutdownError <- err
 		}
 
-		app.Logger.LogInfo("completing background tasks", map[string]string{
+		app.logger.LogInfo("completing background tasks", map[string]string{
 			"addr": srv.Addr,
 		})
 
@@ -78,9 +78,9 @@ func (app *Application) Serve() error {
 		shutdownError <- nil
 	}()
 
-	app.Logger.LogInfo("starting server", map[string]string{
+	app.logger.LogInfo("starting server", map[string]string{
 		"addr": srv.Addr,
-		"env":  app.Config.Env,
+		"env":  app.config.Env,
 	})
 
 	err := srv.ListenAndServe()
@@ -93,7 +93,7 @@ func (app *Application) Serve() error {
 		return err
 	}
 
-	app.Logger.LogInfo("stopped server", map[string]string{
+	app.logger.LogInfo("stopped server", map[string]string{
 		"addr": srv.Addr,
 	})
 

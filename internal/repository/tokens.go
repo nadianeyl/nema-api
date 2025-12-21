@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nadianeyl/nema-api/internal/domain"
 )
 
 type TokenRepository struct {
 	DB *sql.DB
 }
 
-func (r TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) (*Token, error) {
-	token, err := generateToken(userID, ttl, scope)
+func (r TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) (*domain.Token, error) {
+	token, err := domain.GenerateToken(userID, ttl, scope)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +24,7 @@ func (r TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) 
 	return token, err
 }
 
-func (r TokenRepository) Insert(token *Token) error {
+func (r TokenRepository) Insert(token *domain.Token) error {
 	query := `
 		INSERT INTO tokens (hash, user_id, expiry, scope)
 		VALUES ($1, $2, $3, $4)`

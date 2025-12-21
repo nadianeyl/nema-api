@@ -3,7 +3,7 @@ package httputil
 import "net/http"
 
 func (h *HTTPUtil) logError(r *http.Request, err error) {
-	h.Logger.LogError(err, map[string]string{
+	h.logger.LogError(err, map[string]string{
 		"request_method": r.Method,
 		"request_url":    r.URL.String(),
 	})
@@ -39,4 +39,22 @@ func (h *HTTPUtil) FailedValidationResponse(w http.ResponseWriter, r *http.Reque
 
 func (h *HTTPUtil) EditConflictResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, StatusEditConflict, nil)
+}
+
+func (h *HTTPUtil) InvalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusInvalidAuthCredentials, nil)
+}
+
+func (h *HTTPUtil) InvalidAuthTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+
+	h.errorResponse(w, r, StatusInvalidOrMissingAuthToken, nil)
+}
+
+func (h *HTTPUtil) AuthenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusAuthRequired, nil)
+}
+
+func (h *HTTPUtil) InactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusInactiveAccount, nil)
 }

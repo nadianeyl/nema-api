@@ -4,76 +4,76 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/httputil"
-	"github.com/nadianeyl/nema-api/internal/repository"
 	"github.com/nadianeyl/nema-api/internal/service"
 	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
-func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.RegisterUserRequest
 
-	err := app.HTTPUtil.ReadJSON(w, r, &req)
+	err := app.httpUtil.ReadJSON(w, r, &req)
 	if err != nil {
-		app.HTTPUtil.BadRequestResponse(w, r, err)
+		app.httpUtil.BadRequestResponse(w, r, err)
 		return
 	}
 
 	v := validator.New()
 	if service.ValidateRegisterUserReq(v, &req); !v.Valid() {
-		app.HTTPUtil.FailedValidationResponse(w, r, v.Errors)
+		app.httpUtil.FailedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	res, err := app.Services.Users.Register(&req, &app.wg)
+	res, err := app.services.Users.Register(&req, &app.wg)
 	if err != nil {
 		switch {
-		case errors.Is(err, repository.ErrDuplicateEmail):
+		case errors.Is(err, domain.ErrDuplicateEmail):
 			v.AddError("email", "email already exists")
-			app.HTTPUtil.FailedValidationResponse(w, r, v.Errors)
+			app.httpUtil.FailedValidationResponse(w, r, v.Errors)
 		default:
-			app.HTTPUtil.ServerErrorResponse(w, r, err)
+			app.httpUtil.ServerErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.HTTPUtil.WriteJSON(w, httputil.StatusAccepted, res, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusAccepted, res, nil)
 	if err != nil {
-		app.HTTPUtil.ServerErrorResponse(w, r, err)
+		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
 }
 
-func (app *Application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.ActivateUserRequest
 
-	err := app.HTTPUtil.ReadJSON(w, r, &req)
+	err := app.httpUtil.ReadJSON(w, r, &req)
 	if err != nil {
-		app.HTTPUtil.BadRequestResponse(w, r, err)
+		app.httpUtil.BadRequestResponse(w, r, err)
 		return
 	}
 
 	v := validator.New()
 	if service.ValidateTokenPlaintext(v, req.TokenPlaintext); !v.Valid() {
-		app.HTTPUtil.FailedValidationResponse(w, r, v.Errors)
+		app.httpUtil.FailedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	res, err := app.Services.Users.Activate(&req)
+	res, err := app.services.Users.Activate(&req)
 	if err != nil {
 		switch {
-		case errors.Is(err, repository.ErrInvalidOrExpiredToken):
-			v.AddError("token", repository.ErrInvalidOrExpiredToken.Error())
-			app.HTTPUtil.FailedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, repository.ErrEditConflict):
-			app.HTTPUtil.EditConflictResponse(w, r)
+		case errors.Is(err, domain.ErrInvalidOrExpiredToken):
+			v.AddError("token", domain.ErrInvalidOrExpiredToken.Error())
+			app.httpUtil.FailedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, domain.ErrEditConflict):
+			app.httpUtil.EditConflictResponse(w, r)
 		default:
-			app.HTTPUtil.ServerErrorResponse(w, r, err)
+			app.httpUtil.ServerErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.HTTPUtil.WriteJSON(w, httputil.StatusSuccess, res, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, nil)
 	if err != nil {
-		app.HTTPUtil.ServerErrorResponse(w, r, err)
+		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
 }
