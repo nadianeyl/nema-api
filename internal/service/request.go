@@ -35,3 +35,8 @@ func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 	v.Check(tokenPlaintext != "", "token", "token is required")
 	v.Check(len(tokenPlaintext) == 26, "token", "token must be 26 bytes long")
 }
+
+type CreateAuthTokenRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}

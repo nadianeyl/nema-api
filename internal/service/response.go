@@ -15,3 +15,8 @@ type UserResponse struct {
 	CreatedAt                 time.Time `json:"created_at"`
 	UpdatedAt                 time.Time `json:"updated_at"`
 }
+
+type TokenResponse struct {
+	Plaintext string    `json:"token"`
+	Expiry    time.Time `json:"expiry"`
+}

@@ -7,11 +7,13 @@ import (
 )
 
 type Services struct {
-	Users UserService
+	Users  UserService
+	Tokens TokenService
 }
 
 func NewServices(repositories repository.Repositories, m mailer.Mailer, logger *jsonlog.Logger) Services {
 	return Services{
-		Users: NewUserService(repositories.Users, repositories.Tokens, m, logger),
+		Users:  NewUserService(repositories.Users, repositories.Tokens, m, logger),
+		Tokens: NewTokenService(repositories.Users, repositories.Tokens, logger),
 	}
 }

@@ -42,6 +42,40 @@ func (r *UserRepository) Insert(user *User) error {
 	return nil
 }
 
+func (r *UserRepository) GetByEmail(email string) (*User, error) {
+	query := `
+		SELECT id, name, email, password_hash, activated, email_notifications_enabled, created_at, updated_at, version
+		FROM users
+		WHERE email = $1`
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.EmailNotificationsEnabled,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
 func (r UserRepository) Update(user *User) error {
 	query := `
 		UPDATE users

@@ -40,3 +40,7 @@ func (h *HTTPUtil) FailedValidationResponse(w http.ResponseWriter, r *http.Reque
 func (h *HTTPUtil) EditConflictResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, StatusEditConflict, nil)
 }
+
+func (h *HTTPUtil) InvalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusInvalidAuthCredentials, nil)
+}
