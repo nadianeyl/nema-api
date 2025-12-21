@@ -26,3 +26,12 @@ func ValidateRegisterUserReq(v *validator.Validator, req *RegisterUserRequest) {
 
 	ValidatePasswordPlaintext(v, req.Password)
 }
+
+type ActivateUserRequest struct {
+	TokenPlaintext string `json:"token"`
+}
+
+func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
+	v.Check(tokenPlaintext != "", "token", "token is required")
+	v.Check(len(tokenPlaintext) == 26, "token", "token must be 26 bytes long")
+}

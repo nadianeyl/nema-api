@@ -36,3 +36,7 @@ func (h *HTTPUtil) BadRequestResponse(w http.ResponseWriter, r *http.Request, er
 func (h *HTTPUtil) FailedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
 	h.errorResponse(w, r, StatusValidationFailed, errors)
 }
+
+func (h *HTTPUtil) EditConflictResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusEditConflict, nil)
+}

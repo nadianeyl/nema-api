@@ -11,6 +11,7 @@ func (app *Application) routes() http.Handler {
 	router.Handle("GET /api/v1/healthcheck", http.HandlerFunc(app.healthcheckHandler))
 
 	router.Handle("POST /api/v1/users", http.HandlerFunc(app.registerUserHandler))
+	router.Handle("PUT /api/v1/users/activated", http.HandlerFunc(app.activateUserHandler))
 
 	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(router)))
 }

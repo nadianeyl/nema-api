@@ -9,8 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
 const (
@@ -18,7 +16,10 @@ const (
 )
 
 var (
-	ErrDuplicateEmail = errors.New("duplicate email")
+	ErrDuplicateEmail        = errors.New("duplicate email")
+	ErrRecordNotFound        = errors.New("record not found")
+	ErrEditConflict          = errors.New("edit conflict")
+	ErrInvalidOrExpiredToken = errors.New("invalid or expired token")
 )
 
 type User struct {
@@ -92,9 +93,4 @@ func generateToken(userID uuid.UUID, ttl time.Duration, scope string) (*Token, e
 	token.Hash = hash[:]
 
 	return token, nil
-}
-
-func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
-	v.Check(tokenPlaintext != "", "token", "token is required")
-	v.Check(len(tokenPlaintext) == 26, "token", "token must be 26 bytes long")
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -26,7 +27,7 @@ func NewUserService(userRepo repository.UserRepository, tokenRepo repository.Tok
 	}
 }
 
-func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*RegisterUserResponse, error) {
+func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*UserResponse, error) {
 	user := &repository.User{
 		Name:                      req.Name,
 		Email:                     req.Email,
@@ -60,7 +61,43 @@ func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*R
 		}
 	})
 
-	res := &RegisterUserResponse{
+	res := &UserResponse{
+		ID:                        user.ID,
+		Name:                      user.Name,
+		Email:                     user.Email,
+		Activated:                 user.Activated,
+		EmailNotificationsEnabled: user.EmailNotificationsEnabled,
+		CreatedAt:                 user.CreatedAt,
+		UpdatedAt:                 user.UpdatedAt,
+	}
+
+	return res, nil
+}
+
+func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) {
+	user, err := s.UserRepo.GetForToken(repository.ScopeActivation, req.TokenPlaintext)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrRecordNotFound):
+			return nil, repository.ErrInvalidOrExpiredToken
+		default:
+			return nil, err
+		}
+	}
+
+	user.Activated = true
+
+	err = s.UserRepo.Update(user)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.TokenRepo.DeleteAllForUser(repository.ScopeActivation, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &UserResponse{
 		ID:                        user.ID,
 		Name:                      user.Name,
 		Email:                     user.Email,

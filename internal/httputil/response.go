@@ -33,6 +33,7 @@ var (
 	// 4xx
 	StatusBadRequest       = NewStatus(http.StatusBadRequest, "400000", "Bad request")
 	StatusNotFound         = NewStatus(http.StatusNotFound, "404000", "Resource could not be found")
+	StatusEditConflict     = NewStatus(http.StatusConflict, "409000", "Unable to update the record due to an edit conflict, please try again")
 	StatusValidationFailed = NewStatus(http.StatusUnprocessableEntity, "422000", "Validation failed")
 
 	// 5xx
