@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/helper"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 	"github.com/nadianeyl/nema-api/internal/mailer"
@@ -28,7 +29,7 @@ func NewUserService(userRepo repository.UserRepository, tokenRepo repository.Tok
 }
 
 func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*UserResponse, error) {
-	user := &repository.User{
+	user := &domain.User{
 		Name:                      req.Name,
 		Email:                     req.Email,
 		Activated:                 false,
@@ -45,7 +46,7 @@ func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*U
 		return nil, err
 	}
 
-	token, err := s.TokenRepo.New(user.ID, 3*24*time.Hour, repository.ScopeActivation)
+	token, err := s.TokenRepo.New(user.ID, 3*24*time.Hour, domain.ScopeActivation)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +76,11 @@ func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*U
 }
 
 func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) {
-	user, err := s.UserRepo.GetForToken(repository.ScopeActivation, req.TokenPlaintext)
+	user, err := s.UserRepo.GetForToken(domain.ScopeActivation, req.TokenPlaintext)
 	if err != nil {
 		switch {
-		case errors.Is(err, repository.ErrRecordNotFound):
-			return nil, repository.ErrInvalidOrExpiredToken
+		case errors.Is(err, domain.ErrRecordNotFound):
+			return nil, domain.ErrInvalidOrExpiredToken
 		default:
 			return nil, err
 		}
@@ -92,7 +93,7 @@ func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) 
 		return nil, err
 	}
 
-	err = s.TokenRepo.DeleteAllForUser(repository.ScopeActivation, user.ID)
+	err = s.TokenRepo.DeleteAllForUser(domain.ScopeActivation, user.ID)
 	if err != nil {
 		return nil, err
 	}

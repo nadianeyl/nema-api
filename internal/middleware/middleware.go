@@ -7,32 +7,32 @@ import (
 	"strings"
 
 	"github.com/nadianeyl/nema-api/internal/config"
+	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/httputil"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
-	"github.com/nadianeyl/nema-api/internal/repository"
 	"github.com/nadianeyl/nema-api/internal/service"
 	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
 type Middleware struct {
-	Config      config.Config
-	Logger      *jsonlog.Logger
-	HTTPUtil    httputil.HTTPUtil
-	UserService service.UserService
+	config      config.Config
+	logger      *jsonlog.Logger
+	httpUtil    httputil.HTTPUtil
+	userService service.UserService
 }
 
-func New(cfg config.Config, logger *jsonlog.Logger, httpUtil httputil.HTTPUtil, userService service.UserService) Middleware {
+func New(cfg config.Config, l *jsonlog.Logger, httpUtil httputil.HTTPUtil, userService service.UserService) Middleware {
 	return Middleware{
-		Config:      cfg,
-		Logger:      logger,
-		HTTPUtil:    httpUtil,
-		UserService: userService,
+		config:      cfg,
+		logger:      l,
+		httpUtil:    httpUtil,
+		userService: userService,
 	}
 }
 
 func (m *Middleware) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m.Logger.LogInfo("request", map[string]string{
+		m.logger.LogInfo("request", map[string]string{
 			"network_address": r.RemoteAddr,
 			"protocol":        r.Proto,
 			"request_method":  r.Method,
@@ -51,8 +51,8 @@ func (m *Middleware) EnableCORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		if origin != "" {
-			for i := range m.Config.Cors.TrustedOrigins {
-				if origin == m.Config.Cors.TrustedOrigins[i] {
+			for i := range m.config.Cors.TrustedOrigins {
+				if origin == m.config.Cors.TrustedOrigins[i] {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
 
 					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
@@ -78,7 +78,7 @@ func (m *Middleware) RecoverPanic(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
-				m.HTTPUtil.ServerErrorResponse(w, r, fmt.Errorf("%s", err))
+				m.httpUtil.ServerErrorResponse(w, r, fmt.Errorf("%s", err))
 			}
 		}()
 
@@ -100,7 +100,7 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 
 		headerParts := strings.Split(authorizationHeader, " ")
 		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			m.HTTPUtil.InvalidAuthTokenResponse(w, r)
+			m.httpUtil.InvalidAuthTokenResponse(w, r)
 			return
 		}
 
@@ -108,17 +108,17 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 
 		v := validator.New()
 		if service.ValidateTokenPlaintext(v, token); !v.Valid() {
-			m.HTTPUtil.InvalidAuthTokenResponse(w, r)
+			m.httpUtil.InvalidAuthTokenResponse(w, r)
 			return
 		}
 
-		user, err := m.UserService.GetForToken(repository.ScopeAuthentication, token)
+		user, err := m.userService.GetForToken(domain.ScopeAuthentication, token)
 		if err != nil {
 			switch {
-			case errors.Is(err, repository.ErrRecordNotFound):
-				m.HTTPUtil.InvalidAuthTokenResponse(w, r)
+			case errors.Is(err, domain.ErrRecordNotFound):
+				m.httpUtil.InvalidAuthTokenResponse(w, r)
 			default:
-				m.HTTPUtil.ServerErrorResponse(w, r, err)
+				m.httpUtil.ServerErrorResponse(w, r, err)
 			}
 			return
 		}
@@ -133,7 +133,7 @@ func (m *Middleware) RequireAuthenticatedUser(next http.HandlerFunc) http.Handle
 		user := contextGetUser(r)
 
 		if user.IsAnonymous() {
-			m.HTTPUtil.AuthenticationRequiredResponse(w, r)
+			m.httpUtil.AuthenticationRequiredResponse(w, r)
 			return
 		}
 
@@ -146,7 +146,7 @@ func (m *Middleware) RequireActivatedUser(next http.HandlerFunc) http.HandlerFun
 		user := contextGetUser(r)
 
 		if !user.Activated {
-			m.HTTPUtil.InactiveAccountResponse(w, r)
+			m.httpUtil.InactiveAccountResponse(w, r)
 			return
 		}
 

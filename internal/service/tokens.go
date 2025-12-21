@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 	"github.com/nadianeyl/nema-api/internal/repository"
 )
@@ -33,10 +34,10 @@ func (s *TokenService) CreateAuthToken(req *CreateAuthTokenRequest) (*TokenRespo
 	}
 
 	if !match {
-		return nil, repository.ErrInvalidAuthCredentials
+		return nil, domain.ErrInvalidAuthCredentials
 	}
 
-	token, err := s.TokenRepo.New(user.ID, 24*time.Hour, repository.ScopeAuthentication)
+	token, err := s.TokenRepo.New(user.ID, 24*time.Hour, domain.ScopeAuthentication)
 	if err != nil {
 		return nil, err
 	}

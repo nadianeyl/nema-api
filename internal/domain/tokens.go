@@ -1,0 +1,45 @@
+package domain
+
+import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+const (
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
+)
+
+type Token struct {
+	Plaintext string
+	Hash      []byte
+	UserID    uuid.UUID
+	Expiry    time.Time
+	Scope     string
+}
+
+func GenerateToken(userID uuid.UUID, ttl time.Duration, scope string) (*Token, error) {
+	token := &Token{
+		UserID: userID,
+		Expiry: time.Now().Add(ttl),
+		Scope:  scope,
+	}
+
+	randomBytes := make([]byte, 16)
+
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	token.Plaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
+
+	hash := sha256.Sum256([]byte(token.Plaintext))
+	token.Hash = hash[:]
+
+	return token, nil
+}

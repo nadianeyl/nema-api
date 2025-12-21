@@ -3,7 +3,7 @@ package httputil
 import "net/http"
 
 func (h *HTTPUtil) logError(r *http.Request, err error) {
-	h.Logger.LogError(err, map[string]string{
+	h.logger.LogError(err, map[string]string{
 		"request_method": r.Method,
 		"request_url":    r.URL.String(),
 	})
