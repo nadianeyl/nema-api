@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/nadianeyl/nema-api/internal/httputil"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 	"github.com/nadianeyl/nema-api/internal/middleware"
+	"github.com/nadianeyl/nema-api/internal/service"
 )
 
 type Application struct {
@@ -22,9 +24,11 @@ type Application struct {
 	Logger     *jsonlog.Logger
 	Middleware middleware.Middleware
 	HTTPUtil   httputil.HTTPUtil
+	Services   service.Services
+	wg         sync.WaitGroup
 }
 
-func NewApp(cfg config.Config, logger *jsonlog.Logger) *Application {
+func NewApp(cfg config.Config, logger *jsonlog.Logger, services service.Services) *Application {
 	hu := httputil.New(logger)
 
 	return &Application{
@@ -32,6 +36,7 @@ func NewApp(cfg config.Config, logger *jsonlog.Logger) *Application {
 		Logger:     logger,
 		Middleware: middleware.New(cfg, logger, hu),
 		HTTPUtil:   hu,
+		Services:   services,
 	}
 }
 
@@ -60,7 +65,17 @@ func (app *Application) Serve() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		shutdownError <- srv.Shutdown(ctx)
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		app.Logger.LogInfo("completing background tasks", map[string]string{
+			"addr": srv.Addr,
+		})
+
+		app.wg.Wait()
+		shutdownError <- nil
 	}()
 
 	app.Logger.LogInfo("starting server", map[string]string{
