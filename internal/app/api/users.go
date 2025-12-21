@@ -37,7 +37,7 @@ func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.HTTPUtil.WriteJSON(w, httputil.StatusCreated, res, nil)
+	err = app.HTTPUtil.WriteJSON(w, httputil.StatusAccepted, res, nil)
 	if err != nil {
 		app.HTTPUtil.ServerErrorResponse(w, r, err)
 	}

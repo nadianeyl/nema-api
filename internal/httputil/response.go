@@ -26,8 +26,9 @@ func NewStatus(httpStatus int, code, message string) Status {
 
 var (
 	// 2xx
-	StatusSuccess = NewStatus(http.StatusOK, "200000", "Success")
-	StatusCreated = NewStatus(http.StatusOK, "201000", "Resource successfully created")
+	StatusSuccess  = NewStatus(http.StatusOK, "200000", "Success")
+	StatusCreated  = NewStatus(http.StatusCreated, "201000", "Resource successfully created")
+	StatusAccepted = NewStatus(http.StatusAccepted, "202000", "Request accepted and is being processed")
 
 	// 4xx
 	StatusBadRequest       = NewStatus(http.StatusBadRequest, "400000", "Bad request")
