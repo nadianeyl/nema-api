@@ -109,3 +109,22 @@ func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) 
 
 	return res, nil
 }
+
+func (s *UserService) GetForToken(tokenScope, tokenPlaintext string) (*UserResponse, error) {
+	user, err := s.UserRepo.GetForToken(tokenScope, tokenPlaintext)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &UserResponse{
+		ID:                        user.ID,
+		Name:                      user.Name,
+		Email:                     user.Email,
+		Activated:                 user.Activated,
+		EmailNotificationsEnabled: user.EmailNotificationsEnabled,
+		CreatedAt:                 user.CreatedAt,
+		UpdatedAt:                 user.UpdatedAt,
+	}
+
+	return res, nil
+}

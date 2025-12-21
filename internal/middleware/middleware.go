@@ -1,25 +1,32 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/nadianeyl/nema-api/internal/config"
 	"github.com/nadianeyl/nema-api/internal/httputil"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
+	"github.com/nadianeyl/nema-api/internal/repository"
+	"github.com/nadianeyl/nema-api/internal/service"
+	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
 type Middleware struct {
-	Config   config.Config
-	Logger   *jsonlog.Logger
-	HTTPUtil httputil.HTTPUtil
+	Config      config.Config
+	Logger      *jsonlog.Logger
+	HTTPUtil    httputil.HTTPUtil
+	UserService service.UserService
 }
 
-func New(cfg config.Config, logger *jsonlog.Logger, httpUtil httputil.HTTPUtil) Middleware {
+func New(cfg config.Config, logger *jsonlog.Logger, httpUtil httputil.HTTPUtil, userService service.UserService) Middleware {
 	return Middleware{
-		Config:   cfg,
-		Logger:   logger,
-		HTTPUtil: httpUtil,
+		Config:      cfg,
+		Logger:      logger,
+		HTTPUtil:    httpUtil,
+		UserService: userService,
 	}
 }
 
@@ -77,4 +84,74 @@ func (m *Middleware) RecoverPanic(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (m *Middleware) Authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Authorization")
+
+		authorizationHeader := r.Header.Get("Authorization")
+
+		if authorizationHeader == "" {
+			r = contextSetUser(r, service.AnonymousUser)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		headerParts := strings.Split(authorizationHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			m.HTTPUtil.InvalidAuthTokenResponse(w, r)
+			return
+		}
+
+		token := headerParts[1]
+
+		v := validator.New()
+		if service.ValidateTokenPlaintext(v, token); !v.Valid() {
+			m.HTTPUtil.InvalidAuthTokenResponse(w, r)
+			return
+		}
+
+		user, err := m.UserService.GetForToken(repository.ScopeAuthentication, token)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrRecordNotFound):
+				m.HTTPUtil.InvalidAuthTokenResponse(w, r)
+			default:
+				m.HTTPUtil.ServerErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		r = contextSetUser(r, user)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *Middleware) RequireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := contextGetUser(r)
+
+		if user.IsAnonymous() {
+			m.HTTPUtil.AuthenticationRequiredResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *Middleware) RequireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := contextGetUser(r)
+
+		if !user.Activated {
+			m.HTTPUtil.InactiveAccountResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
+	return m.RequireAuthenticatedUser(fn)
 }

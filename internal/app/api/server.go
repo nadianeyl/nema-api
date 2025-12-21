@@ -34,7 +34,7 @@ func NewApp(cfg config.Config, logger *jsonlog.Logger, services service.Services
 	return &Application{
 		Config:     cfg,
 		Logger:     logger,
-		Middleware: middleware.New(cfg, logger, hu),
+		Middleware: middleware.New(cfg, logger, hu, services.Users),
 		HTTPUtil:   hu,
 		Services:   services,
 	}

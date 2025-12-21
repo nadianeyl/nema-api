@@ -31,11 +31,14 @@ var (
 	StatusAccepted = NewStatus(http.StatusAccepted, "202000", "Request accepted and is being processed")
 
 	// 4xx
-	StatusBadRequest             = NewStatus(http.StatusBadRequest, "400000", "Bad request")
-	StatusInvalidAuthCredentials = NewStatus(http.StatusUnauthorized, "401000", "Invalid authentication credentials")
-	StatusNotFound               = NewStatus(http.StatusNotFound, "404000", "Resource could not be found")
-	StatusEditConflict           = NewStatus(http.StatusConflict, "409000", "Unable to update the record due to an edit conflict, please try again")
-	StatusValidationFailed       = NewStatus(http.StatusUnprocessableEntity, "422000", "Validation failed")
+	StatusBadRequest                = NewStatus(http.StatusBadRequest, "400000", "Bad request")
+	StatusInvalidAuthCredentials    = NewStatus(http.StatusUnauthorized, "401000", "Invalid authentication credentials")
+	StatusInvalidOrMissingAuthToken = NewStatus(http.StatusUnauthorized, "401001", "Invalid or missing authentication token")
+	StatusAuthRequired              = NewStatus(http.StatusUnauthorized, "401002", "You must be authenticated to access this resource")
+	StatusInactiveAccount           = NewStatus(http.StatusForbidden, "403000", "Your user account must be activated to access this resource")
+	StatusNotFound                  = NewStatus(http.StatusNotFound, "404000", "Resource could not be found")
+	StatusEditConflict              = NewStatus(http.StatusConflict, "409000", "Unable to update the record due to an edit conflict, please try again")
+	StatusValidationFailed          = NewStatus(http.StatusUnprocessableEntity, "422000", "Validation failed")
 
 	// 5xx
 	StatusInternalServerError = NewStatus(http.StatusInternalServerError, "500000", "Server encountered a problem and could not process your request")
