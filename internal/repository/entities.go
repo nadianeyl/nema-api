@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
 	"errors"
 	"time"
 
@@ -8,8 +11,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	ScopeActivation = "activation"
+)
+
 var (
-	ErrDuplicateEmail = errors.New("duplicate email")
+	ErrDuplicateEmail        = errors.New("duplicate email")
+	ErrRecordNotFound        = errors.New("record not found")
+	ErrEditConflict          = errors.New("edit conflict")
+	ErrInvalidOrExpiredToken = errors.New("invalid or expired token")
 )
 
 type User struct {
@@ -53,4 +63,34 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+type Token struct {
+	Plaintext string
+	Hash      []byte
+	UserID    uuid.UUID
+	Expiry    time.Time
+	Scope     string
+}
+
+func generateToken(userID uuid.UUID, ttl time.Duration, scope string) (*Token, error) {
+	token := &Token{
+		UserID: userID,
+		Expiry: time.Now().Add(ttl),
+		Scope:  scope,
+	}
+
+	randomBytes := make([]byte, 16)
+
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	token.Plaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
+
+	hash := sha256.Sum256([]byte(token.Plaintext))
+	token.Hash = hash[:]
+
+	return token, nil
 }

@@ -42,3 +42,38 @@ func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.HTTPUtil.ServerErrorResponse(w, r, err)
 	}
 }
+
+func (app *Application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	var req service.ActivateUserRequest
+
+	err := app.HTTPUtil.ReadJSON(w, r, &req)
+	if err != nil {
+		app.HTTPUtil.BadRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+	if service.ValidateTokenPlaintext(v, req.TokenPlaintext); !v.Valid() {
+		app.HTTPUtil.FailedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	res, err := app.Services.Users.Activate(&req)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrInvalidOrExpiredToken):
+			v.AddError("token", repository.ErrInvalidOrExpiredToken.Error())
+			app.HTTPUtil.FailedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, repository.ErrEditConflict):
+			app.HTTPUtil.EditConflictResponse(w, r)
+		default:
+			app.HTTPUtil.ServerErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.HTTPUtil.WriteJSON(w, httputil.StatusSuccess, res, nil)
+	if err != nil {
+		app.HTTPUtil.ServerErrorResponse(w, r, err)
+	}
+}
