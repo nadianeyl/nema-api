@@ -1,6 +1,8 @@
 package service
 
 import (
+	"sync"
+
 	"github.com/nadianeyl/nema-api/internal/helper"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
 	"github.com/nadianeyl/nema-api/internal/mailer"
@@ -21,7 +23,7 @@ func NewUserService(userRepo repository.UserRepository, m mailer.Mailer, logger 
 	}
 }
 
-func (s *UserService) Register(req *RegisterUserRequest) (*RegisterUserResponse, error) {
+func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*RegisterUserResponse, error) {
 	user := &repository.User{
 		Name:                      req.Name,
 		Email:                     req.Email,
@@ -39,7 +41,7 @@ func (s *UserService) Register(req *RegisterUserRequest) (*RegisterUserResponse,
 		return nil, err
 	}
 
-	helper.Background(s.Logger, func() {
+	helper.Background(s.Logger, wg, func() {
 		err = s.Mailer.Send(user.Email, "user_welcome.tmpl", user)
 		if err != nil {
 			s.Logger.LogError(err, nil)

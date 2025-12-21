@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -24,6 +25,7 @@ type Application struct {
 	Middleware middleware.Middleware
 	HTTPUtil   httputil.HTTPUtil
 	Services   service.Services
+	wg         sync.WaitGroup
 }
 
 func NewApp(cfg config.Config, logger *jsonlog.Logger, services service.Services) *Application {
@@ -63,7 +65,17 @@ func (app *Application) Serve() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		shutdownError <- srv.Shutdown(ctx)
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		app.Logger.LogInfo("completing background tasks", map[string]string{
+			"addr": srv.Addr,
+		})
+
+		app.wg.Wait()
+		shutdownError <- nil
 	}()
 
 	app.Logger.LogInfo("starting server", map[string]string{

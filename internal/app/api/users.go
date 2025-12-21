@@ -25,7 +25,7 @@ func (app *Application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	res, err := app.Services.Users.Register(&req)
+	res, err := app.Services.Users.Register(&req, &app.wg)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateEmail):
