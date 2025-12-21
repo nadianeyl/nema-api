@@ -1,17 +1,15 @@
 package repository
 
-import (
-	"database/sql"
-
-	"github.com/nadianeyl/nema-api/internal/jsonlog"
-)
+import "database/sql"
 
 type Repositories struct {
-	Users UserRepository
+	Users  UserRepository
+	Tokens TokenRepository
 }
 
-func NewRepositories(db *sql.DB, logger *jsonlog.Logger) Repositories {
+func NewRepositories(db *sql.DB) Repositories {
 	return Repositories{
-		Users: UserRepository{DB: db},
+		Users:  UserRepository{DB: db},
+		Tokens: TokenRepository{DB: db},
 	}
 }

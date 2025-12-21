@@ -12,6 +12,6 @@ type Services struct {
 
 func NewServices(repositories repository.Repositories, m mailer.Mailer, logger *jsonlog.Logger) Services {
 	return Services{
-		Users: NewUserService(repositories.Users, m, logger),
+		Users: NewUserService(repositories.Users, repositories.Tokens, m, logger),
 	}
 }

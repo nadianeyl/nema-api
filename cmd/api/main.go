@@ -21,7 +21,7 @@ func main() {
 	db := db.Init(cfg, logger)
 	defer db.Close()
 
-	repositories := repository.NewRepositories(db, logger)
+	repositories := repository.NewRepositories(db)
 	services := service.NewServices(repositories, mailer, logger)
 	app := api.NewApp(cfg, logger, services)
 

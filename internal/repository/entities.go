@@ -1,11 +1,20 @@
 package repository
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/nadianeyl/nema-api/internal/validator"
+)
+
+const (
+	ScopeActivation = "activation"
 )
 
 var (
@@ -53,4 +62,39 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+type Token struct {
+	Plaintext string
+	Hash      []byte
+	UserID    uuid.UUID
+	Expiry    time.Time
+	Scope     string
+}
+
+func generateToken(userID uuid.UUID, ttl time.Duration, scope string) (*Token, error) {
+	token := &Token{
+		UserID: userID,
+		Expiry: time.Now().Add(ttl),
+		Scope:  scope,
+	}
+
+	randomBytes := make([]byte, 16)
+
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	token.Plaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
+
+	hash := sha256.Sum256([]byte(token.Plaintext))
+	token.Hash = hash[:]
+
+	return token, nil
+}
+
+func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
+	v.Check(tokenPlaintext != "", "token", "token is required")
+	v.Check(len(tokenPlaintext) == 26, "token", "token must be 26 bytes long")
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"sync"
+	"time"
 
 	"github.com/nadianeyl/nema-api/internal/helper"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
@@ -10,16 +11,18 @@ import (
 )
 
 type UserService struct {
-	UserRepo repository.UserRepository
-	Mailer   mailer.Mailer
-	Logger   *jsonlog.Logger
+	UserRepo  repository.UserRepository
+	TokenRepo repository.TokenRepository
+	Mailer    mailer.Mailer
+	Logger    *jsonlog.Logger
 }
 
-func NewUserService(userRepo repository.UserRepository, m mailer.Mailer, logger *jsonlog.Logger) UserService {
+func NewUserService(userRepo repository.UserRepository, tokenRepo repository.TokenRepository, m mailer.Mailer, logger *jsonlog.Logger) UserService {
 	return UserService{
-		UserRepo: userRepo,
-		Mailer:   m,
-		Logger:   logger,
+		UserRepo:  userRepo,
+		TokenRepo: tokenRepo,
+		Mailer:    m,
+		Logger:    logger,
 	}
 }
 
@@ -41,8 +44,17 @@ func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*R
 		return nil, err
 	}
 
+	token, err := s.TokenRepo.New(user.ID, 3*24*time.Hour, repository.ScopeActivation)
+	if err != nil {
+		return nil, err
+	}
+
 	helper.Background(s.Logger, wg, func() {
-		err = s.Mailer.Send(user.Email, "user_welcome.tmpl", user)
+		data := map[string]any{
+			"activationToken": token.Plaintext,
+		}
+
+		err = s.Mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			s.Logger.LogError(err, nil)
 		}
