@@ -10,7 +10,7 @@ func (h *HTTPUtil) logError(r *http.Request, err error) {
 }
 
 func (h *HTTPUtil) errorResponse(w http.ResponseWriter, r *http.Request, status Status, data any) {
-	err := h.WriteJSON(w, status, data, nil)
+	err := h.WriteJSON(w, status, data, nil, nil)
 	if err != nil {
 		h.logError(r, err)
 

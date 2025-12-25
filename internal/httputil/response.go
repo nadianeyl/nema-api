@@ -1,13 +1,18 @@
 package httputil
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/nadianeyl/nema-api/internal/domain"
+)
 
 type Envelope map[string]any
 
 type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
+	Status   string           `json:"status"`
+	Message  string           `json:"message"`
+	Data     any              `json:"data,omitempty"`
+	Metadata *domain.Metadata `json:"metadata,omitempty"`
 }
 
 type Status struct {

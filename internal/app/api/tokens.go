@@ -38,7 +38,7 @@ func (app *application) createAuthTokenHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.httpUtil.WriteJSON(w, httputil.StatusCreated, res, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusCreated, res, nil, nil)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
