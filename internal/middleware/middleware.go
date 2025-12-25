@@ -93,7 +93,7 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 		authorizationHeader := r.Header.Get("Authorization")
 
 		if authorizationHeader == "" {
-			r = contextSetUser(r, service.AnonymousUser)
+			r = httputil.ContextSetUser(r, service.AnonymousUser)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -123,14 +123,14 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		r = contextSetUser(r, user)
+		r = httputil.ContextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
 }
 
 func (m *Middleware) RequireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := contextGetUser(r)
+		user := httputil.ContextGetUser(r)
 
 		if user.IsAnonymous() {
 			m.httpUtil.AuthenticationRequiredResponse(w, r)
@@ -143,7 +143,7 @@ func (m *Middleware) RequireAuthenticatedUser(next http.HandlerFunc) http.Handle
 
 func (m *Middleware) RequireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := contextGetUser(r)
+		user := httputil.ContextGetUser(r)
 
 		if !user.Activated {
 			m.httpUtil.InactiveAccountResponse(w, r)

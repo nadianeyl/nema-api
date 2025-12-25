@@ -1,6 +1,11 @@
 package service
 
-import "github.com/nadianeyl/nema-api/internal/validator"
+import (
+	"github.com/google/uuid"
+	"github.com/govalues/decimal"
+	"github.com/nadianeyl/nema-api/internal/domain"
+	"github.com/nadianeyl/nema-api/internal/validator"
+)
 
 type RegisterUserRequest struct {
 	Name     string `json:"name"`
@@ -39,4 +44,26 @@ func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 type CreateAuthTokenRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type AddAccountRequest struct {
+	UserID       uuid.UUID           `json:"-"`
+	Name         string              `json:"name"`
+	Class        domain.AccountClass `json:"class"`
+	CurrencyCode string              `json:"currency_code"`
+	Balance      decimal.Decimal     `json:"balance"`
+	IsBudgeted   bool                `json:"is_budgeted"`
+}
+
+func ValidateAddAccountReq(v *validator.Validator, req *AddAccountRequest) {
+	accountClasses := []domain.AccountClass{domain.AccountClassCCE, domain.AccountClassInvestment, domain.AccountClassLiability}
+
+	v.Check(req.Name != "", "name", "name is required")
+
+	v.Check(req.Class != "", "class", "class is required")
+	v.Check(validator.PermittedValue(req.Class, accountClasses...), "class", "class is invalid")
+
+	v.Check(req.CurrencyCode != "", "currency_code", "currency code is required")
+	v.Check(len(req.CurrencyCode) == 3, "currency_code", "currency code must be 3 characters long")
+	v.Check(validator.PermittedValue(req.CurrencyCode, domain.GetCurrencyCodes()...), "currency_code", "currency code is invalid")
 }

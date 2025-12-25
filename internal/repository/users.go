@@ -78,7 +78,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (r UserRepository) Update(user *domain.User) error {
+func (r *UserRepository) Update(user *domain.User) error {
 	query := `
 		UPDATE users
 		SET name = $1, email = $2, password_hash = $3, activated = $4, email_notifications_enabled = $5, updated_at = $6, version = version + 1
@@ -114,7 +114,7 @@ func (r UserRepository) Update(user *domain.User) error {
 	return nil
 }
 
-func (r UserRepository) GetForToken(tokenScope, tokenPlaintext string) (*domain.User, error) {
+func (r *UserRepository) GetForToken(tokenScope, tokenPlaintext string) (*domain.User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
