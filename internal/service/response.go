@@ -4,6 +4,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/govalues/decimal"
+
+	"github.com/nadianeyl/nema-api/internal/domain"
 )
 
 var AnonymousUser = &UserResponse{}
@@ -25,4 +28,16 @@ func (u *UserResponse) IsAnonymous() bool {
 type TokenResponse struct {
 	Plaintext string    `json:"token"`
 	Expiry    time.Time `json:"expiry"`
+}
+
+type AccountResponse struct {
+	ID           uuid.UUID           `json:"id"`
+	UserID       uuid.UUID           `json:"user_id"`
+	Name         string              `json:"name"`
+	Class        domain.AccountClass `json:"class"`
+	CurrencyCode string              `json:"currency_code"`
+	Balance      decimal.Decimal     `json:"balance"`
+	IsBudgeted   bool                `json:"is_budgeted"`
+	CreatedAt    time.Time           `json:"created_at"`
+	UpdatedAt    time.Time           `json:"updated_at"`
 }
