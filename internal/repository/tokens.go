@@ -13,7 +13,7 @@ type TokenRepository struct {
 	DB *sql.DB
 }
 
-func (r TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) (*domain.Token, error) {
+func (r *TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) (*domain.Token, error) {
 	token, err := domain.GenerateToken(userID, ttl, scope)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (r TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) 
 	return token, err
 }
 
-func (r TokenRepository) Insert(token *domain.Token) error {
+func (r *TokenRepository) Insert(token *domain.Token) error {
 	query := `
 		INSERT INTO tokens (hash, user_id, expiry, scope)
 		VALUES ($1, $2, $3, $4)`
@@ -39,7 +39,7 @@ func (r TokenRepository) Insert(token *domain.Token) error {
 	return err
 }
 
-func (r TokenRepository) DeleteAllForUser(scope string, userID uuid.UUID) error {
+func (r *TokenRepository) DeleteAllForUser(scope string, userID uuid.UUID) error {
 	query := `
 		DELETE FROM tokens
 		WHERE scope = $1 AND user_id = $2`
