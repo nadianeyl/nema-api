@@ -10,6 +10,33 @@ import (
 	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
+func (app *application) listAccountsHandler(w http.ResponseWriter, r *http.Request) {
+	var req service.ListAccountsRequest
+
+	v := validator.New()
+	qs := r.URL.Query()
+	req.Class = domain.AccountClass(app.httpUtil.ReadString(qs, "class", ""))
+	req.Limit = app.httpUtil.ReadInt(qs, "limit", 10, v)
+	req.Page = app.httpUtil.ReadInt(qs, "page", 1, v)
+	req.UserID = httputil.ContextGetUserID(r)
+
+	if service.ValidateListAccountsReq(v, &req); !v.Valid() {
+		app.httpUtil.FailedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	res, metadata, err := app.services.Accounts.List(&req)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, &metadata, nil)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) addAccountHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.AddAccountRequest
 
@@ -38,7 +65,7 @@ func (app *application) addAccountHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.httpUtil.WriteJSON(w, httputil.StatusCreated, res, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusCreated, res, nil, nil)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}

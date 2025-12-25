@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/google/uuid"
 	"github.com/govalues/decimal"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/validator"
 )
@@ -46,6 +47,20 @@ type CreateAuthTokenRequest struct {
 	Password string `json:"password"`
 }
 
+type ListAccountsRequest struct {
+	UserID uuid.UUID           `json:"-"`
+	Class  domain.AccountClass `json:"class"`
+	domain.Filters
+}
+
+func ValidateListAccountsReq(v *validator.Validator, req *ListAccountsRequest) {
+	if req.Class != "" {
+		v.Check(validator.PermittedValue(req.Class, domain.GetAccountClasses()...), "class", "class is invalid")
+	}
+
+	ValidateFilters(v, req.Filters)
+}
+
 type AddAccountRequest struct {
 	UserID       uuid.UUID           `json:"-"`
 	Name         string              `json:"name"`
@@ -56,14 +71,19 @@ type AddAccountRequest struct {
 }
 
 func ValidateAddAccountReq(v *validator.Validator, req *AddAccountRequest) {
-	accountClasses := []domain.AccountClass{domain.AccountClassCCE, domain.AccountClassInvestment, domain.AccountClassLiability}
-
 	v.Check(req.Name != "", "name", "name is required")
 
 	v.Check(req.Class != "", "class", "class is required")
-	v.Check(validator.PermittedValue(req.Class, accountClasses...), "class", "class is invalid")
+	v.Check(validator.PermittedValue(req.Class, domain.GetAccountClasses()...), "class", "class is invalid")
 
 	v.Check(req.CurrencyCode != "", "currency_code", "currency code is required")
 	v.Check(len(req.CurrencyCode) == 3, "currency_code", "currency code must be 3 characters long")
 	v.Check(validator.PermittedValue(req.CurrencyCode, domain.GetCurrencyCodes()...), "currency_code", "currency code is invalid")
+}
+
+func ValidateFilters(v *validator.Validator, f domain.Filters) {
+	v.Check(f.Limit > 0, "limit", "limit must be greater than zero")
+	v.Check(f.Limit <= 100, "limit", "limit must be a maximum of 100")
+	v.Check(f.Page > 0, "page", "page must be greater than zero")
+	v.Check(f.Page <= 10_000_000, "page", "page must be a maximum of 10 million")
 }

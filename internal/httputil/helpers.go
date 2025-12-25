@@ -6,14 +6,20 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
+
+	"github.com/nadianeyl/nema-api/internal/domain"
+	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
-func (h *HTTPUtil) WriteJSON(w http.ResponseWriter, status Status, data any, headers http.Header) error {
+func (h *HTTPUtil) WriteJSON(w http.ResponseWriter, status Status, data any, metadata *domain.Metadata, headers http.Header) error {
 	res := Response{
-		Status:  status.Code,
-		Message: status.Message,
-		Data:    data,
+		Status:   status.Code,
+		Message:  status.Message,
+		Data:     data,
+		Metadata: metadata,
 	}
 
 	jsonBytes, err := json.Marshal(res)
@@ -81,4 +87,30 @@ func (h *HTTPUtil) ReadJSON(w http.ResponseWriter, r *http.Request, dst any) err
 	}
 
 	return nil
+}
+
+func (h *HTTPUtil) ReadString(qs url.Values, key, defaultValue string) string {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	return s
+}
+
+func (h *HTTPUtil) ReadInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		v.AddError(key, fmt.Sprintf("%s must be an integer", key))
+		return defaultValue
+	}
+
+	return i
 }

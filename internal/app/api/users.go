@@ -37,7 +37,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.httpUtil.WriteJSON(w, httputil.StatusAccepted, res, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusAccepted, res, nil, nil)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
@@ -72,7 +72,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, nil, nil)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}

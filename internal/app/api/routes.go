@@ -14,6 +14,7 @@ func (app *application) routes() http.Handler {
 	router.Handle("PUT /api/v1/users/activated", http.HandlerFunc(app.activateUserHandler))
 	router.Handle("POST /api/v1/users/authentication", http.HandlerFunc(app.createAuthTokenHandler))
 
+	router.Handle("GET /api/v1/accounts", m.RequireActivatedUser(app.listAccountsHandler))
 	router.Handle("POST /api/v1/accounts", m.RequireActivatedUser(app.addAccountHandler))
 
 	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(m.Authenticate(router))))

@@ -15,6 +15,14 @@ const (
 	AccountClassLiability  AccountClass = "liability"
 )
 
+func (c AccountClass) String() string {
+	return string(c)
+}
+
+func GetAccountClasses() []AccountClass {
+	return []AccountClass{AccountClassCCE, AccountClassInvestment, AccountClassLiability}
+}
+
 type Account struct {
 	ID           uuid.UUID
 	UserID       uuid.UUID
