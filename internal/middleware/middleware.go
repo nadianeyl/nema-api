@@ -146,7 +146,7 @@ func (m *Middleware) RequireActivatedUser(next http.HandlerFunc) http.HandlerFun
 		user := httputil.ContextGetUser(r)
 
 		if !user.Activated {
-			m.httpUtil.InactiveAccountResponse(w, r)
+			m.httpUtil.InactiveUserAccountResponse(w, r)
 			return
 		}
 

@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/validator"
 )
@@ -87,6 +89,16 @@ func (h *HTTPUtil) ReadJSON(w http.ResponseWriter, r *http.Request, dst any) err
 	}
 
 	return nil
+}
+
+func (h *HTTPUtil) ReadIDParam(r *http.Request) (*uuid.UUID, error) {
+	idParam := r.PathValue("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		return nil, errors.New("invalid id parameter")
+	}
+
+	return &id, err
 }
 
 func (h *HTTPUtil) ReadString(qs url.Values, key, defaultValue string) string {

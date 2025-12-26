@@ -9,4 +9,5 @@ var (
 	ErrInvalidInputValue      = errors.New("invalid input value")
 	ErrInvalidOrExpiredToken  = errors.New("invalid or expired token")
 	ErrInvalidAuthCredentials = errors.New("invalid authentication credentials")
+	ErrUserNotAllowed         = errors.New("user not allowed")
 )

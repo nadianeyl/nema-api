@@ -55,6 +55,10 @@ func (h *HTTPUtil) AuthenticationRequiredResponse(w http.ResponseWriter, r *http
 	h.errorResponse(w, r, StatusAuthRequired, nil)
 }
 
-func (h *HTTPUtil) InactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
-	h.errorResponse(w, r, StatusInactiveAccount, nil)
+func (h *HTTPUtil) UserNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusUserNotAllowed, nil)
+}
+
+func (h *HTTPUtil) InactiveUserAccountResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, StatusInactiveUserAccount, nil)
 }
