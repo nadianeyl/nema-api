@@ -179,3 +179,28 @@ func (r *AccountRepository) Update(account *domain.Account) error {
 
 	return nil
 }
+
+func (r *AccountRepository) Delete(id uuid.UUID) error {
+	query := `
+		DELETE FROM accounts
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := r.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrRecordNotFound
+	}
+
+	return nil
+}

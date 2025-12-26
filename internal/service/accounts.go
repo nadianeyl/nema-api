@@ -110,3 +110,21 @@ func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, er
 
 	return res, nil
 }
+
+func (s *AccountService) Delete(req *DeleteAccountRequest) error {
+	account, err := s.accountRepo.GetByID(req.ID)
+	if err != nil {
+		return err
+	}
+
+	if req.UserID != account.UserID {
+		return domain.ErrUserNotAllowed
+	}
+
+	err = s.accountRepo.Delete(account.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
