@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"time"
 
@@ -20,8 +21,8 @@ func (r *AccountRepository) GetAllForUser(userID uuid.UUID, class domain.Account
 		SELECT COUNT(*) OVER(), id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
 		FROM accounts
 		WHERE user_id = $1 
-		AND class = $2 OR $2 IS NULL
-		ORDER BY created_at, id ASC
+		AND (class = $2 OR $2 IS NULL)
+		ORDER BY created_at DESC, id ASC
 		LIMIT $3 OFFSET $4`
 
 	var classParam sql.NullString
@@ -104,6 +105,73 @@ func (r *AccountRepository) Insert(account *domain.Account) error {
 		switch {
 		case strings.Contains(err.Error(), "pq: invalid input value for enum"):
 			return domain.ErrInvalidInputValue
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *AccountRepository) GetByID(id uuid.UUID) (*domain.Account, error) {
+	query := `
+		SELECT id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
+		FROM accounts
+		WHERE id = $1`
+
+	var account domain.Account
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, id).Scan(
+		&account.ID,
+		&account.UserID,
+		&account.Name,
+		&account.Class,
+		&account.CurrencyCode,
+		&account.Balance,
+		&account.IsBudgeted,
+		&account.CreatedAt,
+		&account.UpdatedAt,
+		&account.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, domain.ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &account, nil
+}
+
+func (r *AccountRepository) Update(account *domain.Account) error {
+	query := `
+		UPDATE accounts
+		SET name = $1, class = $2, is_budgeted = $3, updated_at = $4, version = version + 1
+		WHERE id = $5 AND version = $6
+		RETURNING updated_at, version`
+
+	args := []any{
+		account.Name,
+		account.Class,
+		account.IsBudgeted,
+		time.Now(),
+		account.ID,
+		account.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, args...).Scan(&account.UpdatedAt, &account.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return domain.ErrEditConflict
 		default:
 			return err
 		}

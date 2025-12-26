@@ -68,3 +68,45 @@ func (s *AccountService) Add(req *AddAccountRequest) (*AccountResponse, error) {
 
 	return res, nil
 }
+
+func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, error) {
+	account, err := s.accountRepo.GetByID(req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.UserID != account.UserID {
+		return nil, domain.ErrUserNotAllowed
+	}
+
+	if req.Name != nil {
+		account.Name = *req.Name
+	}
+
+	if req.Class != nil {
+		account.Class = *req.Class
+	}
+
+	if req.IsBudgeted != nil {
+		account.IsBudgeted = *req.IsBudgeted
+	}
+
+	err = s.accountRepo.Update(account)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &AccountResponse{
+		ID:           account.ID,
+		UserID:       account.UserID,
+		Name:         account.Name,
+		Class:        account.Class,
+		CurrencyCode: account.CurrencyCode,
+		Balance:      account.Balance,
+		IsBudgeted:   account.IsBudgeted,
+		CreatedAt:    account.CreatedAt,
+		UpdatedAt:    account.UpdatedAt,
+	}
+
+	return res, nil
+}

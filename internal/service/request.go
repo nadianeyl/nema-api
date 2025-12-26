@@ -81,6 +81,25 @@ func ValidateAddAccountReq(v *validator.Validator, req *AddAccountRequest) {
 	v.Check(validator.PermittedValue(req.CurrencyCode, domain.GetCurrencyCodes()...), "currency_code", "currency code is invalid")
 }
 
+type UpdateAccountRequest struct {
+	ID         uuid.UUID            `json:"-"`
+	UserID     uuid.UUID            `json:"-"`
+	Name       *string              `json:"name"`
+	Class      *domain.AccountClass `json:"class"`
+	IsBudgeted *bool                `json:"is_budgeted"`
+}
+
+func ValidateUpdateAccountReq(v *validator.Validator, req *UpdateAccountRequest) {
+	if req.Name != nil {
+		v.Check(*req.Name != "", "name", "name is required")
+	}
+
+	if req.Class != nil {
+		v.Check(*req.Class != "", "class", "class is required")
+		v.Check(validator.PermittedValue(*req.Class, domain.GetAccountClasses()...), "class", "class is invalid")
+	}
+}
+
 func ValidateFilters(v *validator.Validator, f domain.Filters) {
 	v.Check(f.Limit > 0, "limit", "limit must be greater than zero")
 	v.Check(f.Limit <= 100, "limit", "limit must be a maximum of 100")

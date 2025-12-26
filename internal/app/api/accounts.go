@@ -70,3 +70,48 @@ func (app *application) addAccountHandler(w http.ResponseWriter, r *http.Request
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateAccountHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.httpUtil.ReadIDParam(r)
+	if err != nil {
+		app.httpUtil.NotFoundResponse(w, r)
+		return
+	}
+
+	var req service.UpdateAccountRequest
+
+	err = app.httpUtil.ReadJSON(w, r, &req)
+	if err != nil {
+		app.httpUtil.BadRequestResponse(w, r, err)
+		return
+	}
+
+	req.ID = *id
+	req.UserID = httputil.ContextGetUserID(r)
+
+	v := validator.New()
+	if service.ValidateUpdateAccountReq(v, &req); !v.Valid() {
+		app.httpUtil.FailedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	res, err := app.services.Accounts.Update(&req)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrRecordNotFound):
+			app.httpUtil.NotFoundResponse(w, r)
+		case errors.Is(err, domain.ErrUserNotAllowed):
+			app.httpUtil.UserNotAllowedResponse(w, r)
+		case errors.Is(err, domain.ErrEditConflict):
+			app.httpUtil.EditConflictResponse(w, r)
+		default:
+			app.httpUtil.ServerErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, nil, nil)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+	}
+}
