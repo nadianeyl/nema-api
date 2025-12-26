@@ -21,8 +21,8 @@ func (r *AccountRepository) GetAllForUser(userID uuid.UUID, class domain.Account
 		SELECT COUNT(*) OVER(), id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
 		FROM accounts
 		WHERE user_id = $1 
-		AND class = $2 OR $2 IS NULL
-		ORDER BY created_at, id ASC
+		AND (class = $2 OR $2 IS NULL)
+		ORDER BY created_at DESC, id ASC
 		LIMIT $3 OFFSET $4`
 
 	var classParam sql.NullString
