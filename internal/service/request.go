@@ -100,6 +100,11 @@ func ValidateUpdateAccountReq(v *validator.Validator, req *UpdateAccountRequest)
 	}
 }
 
+type DeleteAccountRequest struct {
+	ID     uuid.UUID `json:"-"`
+	UserID uuid.UUID `json:"-"`
+}
+
 func ValidateFilters(v *validator.Validator, f domain.Filters) {
 	v.Check(f.Limit > 0, "limit", "limit must be greater than zero")
 	v.Check(f.Limit <= 100, "limit", "limit must be a maximum of 100")
