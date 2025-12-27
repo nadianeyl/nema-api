@@ -111,3 +111,17 @@ func ValidateFilters(v *validator.Validator, f domain.Filters) {
 	v.Check(f.Page > 0, "page", "page must be greater than zero")
 	v.Check(f.Page <= 10_000_000, "page", "page must be a maximum of 10 million")
 }
+
+type ListCategoriesRequest struct {
+	UserID          uuid.UUID              `json:"-"`
+	TransactionType domain.TransactionType `json:"transaction_type"`
+	domain.Filters
+}
+
+func ValidateListCategoriesReq(v *validator.Validator, req *ListCategoriesRequest) {
+	if req.TransactionType != "" {
+		v.Check(validator.PermittedValue(req.TransactionType, domain.GetTransactionTypes()...), "transaction_type", "transaction type is invalid")
+	}
+
+	ValidateFilters(v, req.Filters)
+}

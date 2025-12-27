@@ -19,5 +19,7 @@ func (app *application) routes() http.Handler {
 	router.Handle("PATCH /api/v1/accounts/{id}", m.RequireActivatedUser(app.updateAccountHandler))
 	router.Handle("DELETE /api/v1/accounts/{id}", m.RequireActivatedUser(app.deleteAccountHandler))
 
+	router.Handle("GET /api/v1/categories", m.RequireActivatedUser(app.listCategoriesHandler))
+
 	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(m.Authenticate(router))))
 }

@@ -31,7 +31,7 @@ func (app *application) listAccountsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, &metadata, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusRetrieveSuccess, res, &metadata, nil)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
@@ -110,7 +110,7 @@ func (app *application) updateAccountHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.httpUtil.WriteJSON(w, httputil.StatusSuccess, res, nil, nil)
+	err = app.httpUtil.WriteJSON(w, httputil.StatusUpdateSuccess, res, nil, nil)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}

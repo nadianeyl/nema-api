@@ -41,3 +41,12 @@ type AccountResponse struct {
 	CreatedAt    time.Time           `json:"created_at"`
 	UpdatedAt    time.Time           `json:"updated_at"`
 }
+
+type CategoryResponse struct {
+	ID              uuid.UUID              `json:"id"`
+	UserID          uuid.NullUUID          `json:"user_id"`
+	Name            string                 `json:"name"`
+	TransactionType domain.TransactionType `json:"transaction_type"`
+	CreatedAt       time.Time              `json:"created_at"`
+	UpdatedAt       time.Time              `json:"updated_at"`
+}
