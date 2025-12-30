@@ -22,7 +22,8 @@ func main() {
 	defer db.Close()
 
 	repositories := repository.NewRepositories(db)
-	services := service.NewServices(repositories, mailer, logger)
+	txProvider := repository.NewTxProvider(db)
+	services := service.NewServices(repositories, txProvider, mailer, logger)
 	app := api.NewApp(cfg, logger, services)
 
 	err := app.Serve()

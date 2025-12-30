@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/govalues/decimal"
 
 	"github.com/nadianeyl/nema-api/internal/domain"
 )
 
 type AccountRepository struct {
-	DB *sql.DB
+	DB db
 }
 
 func (r *AccountRepository) GetAllForUser(userID uuid.UUID, class domain.AccountClass, filters domain.Filters) ([]*domain.Account, domain.Metadata, error) {
@@ -148,6 +149,42 @@ func (r *AccountRepository) GetByID(id uuid.UUID) (*domain.Account, error) {
 	return &account, nil
 }
 
+func (r *AccountRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Account, error) {
+	query := `
+		SELECT id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
+		FROM accounts
+		WHERE id = $1
+		FOR UPDATE`
+
+	var account domain.Account
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, id).Scan(
+		&account.ID,
+		&account.UserID,
+		&account.Name,
+		&account.Class,
+		&account.CurrencyCode,
+		&account.Balance,
+		&account.IsBudgeted,
+		&account.CreatedAt,
+		&account.UpdatedAt,
+		&account.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, domain.ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &account, nil
+}
+
 func (r *AccountRepository) Update(account *domain.Account) error {
 	query := `
 		UPDATE accounts
@@ -175,6 +212,34 @@ func (r *AccountRepository) Update(account *domain.Account) error {
 		default:
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *AccountRepository) UpdateBalance(id uuid.UUID, amountChange decimal.Decimal) error {
+	query := `
+		UPDATE accounts
+		SET balance = balance + $1, updated_at = $2
+		WHERE id = $3`
+
+	args := []any{amountChange, time.Now(), id}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := r.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrRecordNotFound
 	}
 
 	return nil

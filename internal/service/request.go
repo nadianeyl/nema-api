@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/govalues/decimal"
 
@@ -124,4 +126,52 @@ func ValidateListCategoriesReq(v *validator.Validator, req *ListCategoriesReques
 	}
 
 	ValidateFilters(v, req.Filters)
+}
+
+type AddTransactionRequest struct {
+	UserID        uuid.UUID              `json:"-"`
+	Type          domain.TransactionType `json:"type"`
+	CategoryID    uuid.UUID              `json:"category_id"`
+	Amount        decimal.Decimal        `json:"amount"`
+	Date          time.Time              `json:"date"`
+	Title         *string                `json:"title"`
+	Notes         *string                `json:"notes"`
+	FromAccountID *uuid.UUID             `json:"from_account_id"`
+	ToAccountID   *uuid.UUID             `json:"to_account_id"`
+}
+
+func ValidateAddTransactionReq(v *validator.Validator, req *AddTransactionRequest) {
+	v.Check(req.Type != "", "type", "type is required")
+	v.Check(validator.PermittedValue(req.Type, domain.GetTransactionTypes()...), "type", "type is invalid")
+
+	v.Check(req.CategoryID != uuid.Nil, "category_id", "category ID is required")
+
+	v.Check(req.Amount.IsPos(), "amount", "amount must be greater than zero")
+
+	v.Check(!req.Date.IsZero(), "date", "date is required")
+
+	if req.Title != nil {
+		v.Check(len(*req.Title) <= 100, "title", "title must not be more than 100 characters")
+	}
+
+	if req.Notes != nil {
+		v.Check(len(*req.Notes) <= 400, "notes", "notes must not be more than 400 characters")
+	}
+
+	if req.Type == domain.TransactionTypeExpense {
+		v.Check(req.FromAccountID != nil, "from_account_id", "source account ID is required")
+	}
+
+	if req.Type == domain.TransactionTypeIncome {
+		v.Check(req.ToAccountID != nil, "to_account_id", "destination account ID is required")
+	}
+
+	if req.Type == domain.TransactionTypeTransfer {
+		v.Check(req.FromAccountID != nil, "from_account_id", "source account ID is required")
+		v.Check(req.ToAccountID != nil, "to_account_id", "destination account ID is required")
+
+		if req.FromAccountID != nil && req.ToAccountID != nil {
+			v.Check(*req.FromAccountID != *req.ToAccountID, "to_account_id", "destination account ID must be different from source account ID")
+		}
+	}
 }

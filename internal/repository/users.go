@@ -11,7 +11,7 @@ import (
 )
 
 type UserRepository struct {
-	DB *sql.DB
+	DB db
 }
 
 func (r *UserRepository) Insert(user *domain.User) error {

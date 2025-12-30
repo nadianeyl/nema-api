@@ -10,4 +10,5 @@ var (
 	ErrInvalidOrExpiredToken  = errors.New("invalid or expired token")
 	ErrInvalidAuthCredentials = errors.New("invalid authentication credentials")
 	ErrUserNotAllowed         = errors.New("user not allowed")
+	ErrInvalidTransactionType = errors.New("invalid transaction type")
 )
