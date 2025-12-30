@@ -2,15 +2,15 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 )
 
 type TokenRepository struct {
-	DB *sql.DB
+	DB db
 }
 
 func (r *TokenRepository) New(userID uuid.UUID, ttl time.Duration, scope string) (*domain.Token, error) {

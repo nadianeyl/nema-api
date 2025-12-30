@@ -50,3 +50,18 @@ type CategoryResponse struct {
 	CreatedAt       time.Time              `json:"created_at"`
 	UpdatedAt       time.Time              `json:"updated_at"`
 }
+
+type TransactionResponse struct {
+	ID            uuid.UUID              `json:"uuid"`
+	UserID        uuid.UUID              `json:"user_id"`
+	Type          domain.TransactionType `json:"type"`
+	CategoryID    uuid.UUID              `json:"category_id"`
+	Amount        decimal.Decimal        `json:"amount"`
+	Date          time.Time              `json:"date"`
+	Title         *string                `json:"title"`
+	Notes         *string                `json:"notes"`
+	FromAccountID *uuid.UUID             `json:"from_account_id"`
+	ToAccountID   *uuid.UUID             `json:"to_account_id"`
+	CreatedAt     time.Time              `json:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at"`
+}
