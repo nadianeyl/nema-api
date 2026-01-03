@@ -1,8 +1,6 @@
 package api
 
-import (
-	"net/http"
-)
+import "net/http"
 
 func (app *application) routes() http.Handler {
 	router := http.NewServeMux()
@@ -22,6 +20,7 @@ func (app *application) routes() http.Handler {
 	router.Handle("GET /api/v1/categories", m.RequireActivatedUser(app.listCategoriesHandler))
 
 	router.Handle("POST /api/v1/transactions", m.RequireActivatedUser(app.addTransactionHandler))
+	router.Handle("PATCH /api/v1/transactions/{id}", m.RequireActivatedUser(app.updateTransactionHandler))
 
 	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(m.Authenticate(router))))
 }

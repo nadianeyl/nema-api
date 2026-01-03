@@ -140,6 +140,25 @@ type AddTransactionRequest struct {
 	ToAccountID   *uuid.UUID             `json:"to_account_id"`
 }
 
+func ValidateAccountID(v *validator.Validator, transactionType domain.TransactionType, fromAccountID, toAccountID *uuid.UUID) {
+	if transactionType == domain.TransactionTypeExpense {
+		v.Check(fromAccountID != nil, "from_account_id", "source account ID is required")
+	}
+
+	if transactionType == domain.TransactionTypeIncome {
+		v.Check(toAccountID != nil, "to_account_id", "destination account ID is required")
+	}
+
+	if transactionType == domain.TransactionTypeTransfer {
+		v.Check(fromAccountID != nil, "from_account_id", "source account ID is required")
+		v.Check(toAccountID != nil, "to_account_id", "destination account ID is required")
+
+		if fromAccountID != nil && toAccountID != nil {
+			v.Check(*fromAccountID != *toAccountID, "to_account_id", "destination account ID must be different from source account ID")
+		}
+	}
+}
+
 func ValidateAddTransactionReq(v *validator.Validator, req *AddTransactionRequest) {
 	v.Check(req.Type != "", "type", "type is required")
 	v.Check(validator.PermittedValue(req.Type, domain.GetTransactionTypes()...), "type", "type is invalid")
@@ -158,20 +177,79 @@ func ValidateAddTransactionReq(v *validator.Validator, req *AddTransactionReques
 		v.Check(len(*req.Notes) <= 400, "notes", "notes must not be more than 400 characters")
 	}
 
-	if req.Type == domain.TransactionTypeExpense {
-		v.Check(req.FromAccountID != nil, "from_account_id", "source account ID is required")
+	ValidateAccountID(v, req.Type, req.FromAccountID, req.ToAccountID)
+}
+
+type UpdateTransactionRequest struct {
+	ID            uuid.UUID               `json:"-"`
+	UserID        uuid.UUID               `json:"-"`
+	Type          *domain.TransactionType `json:"type"`
+	CategoryID    *uuid.UUID              `json:"category_id"`
+	Amount        *decimal.Decimal        `json:"amount"`
+	Date          *time.Time              `json:"date"`
+	Title         *string                 `json:"title"`
+	Notes         *string                 `json:"notes"`
+	FromAccountID *uuid.UUID              `json:"from_account_id"`
+	ToAccountID   *uuid.UUID              `json:"to_account_id"`
+}
+
+func ValidateUpdateTransactionReq(v *validator.Validator, req *UpdateTransactionRequest) {
+	if req.Type != nil {
+		v.Check(*req.Type != "", "type", "type is required")
+		v.Check(validator.PermittedValue(*req.Type, domain.GetTransactionTypes()...), "type", "type is invalid")
 	}
 
-	if req.Type == domain.TransactionTypeIncome {
-		v.Check(req.ToAccountID != nil, "to_account_id", "destination account ID is required")
+	if req.CategoryID != nil {
+		v.Check(*req.CategoryID != uuid.Nil, "category_id", "category ID is required")
 	}
 
-	if req.Type == domain.TransactionTypeTransfer {
-		v.Check(req.FromAccountID != nil, "from_account_id", "source account ID is required")
-		v.Check(req.ToAccountID != nil, "to_account_id", "destination account ID is required")
+	if req.Amount != nil {
+		v.Check(req.Amount.IsPos(), "amount", "amount must be greater than zero")
+	}
 
-		if req.FromAccountID != nil && req.ToAccountID != nil {
-			v.Check(*req.FromAccountID != *req.ToAccountID, "to_account_id", "destination account ID must be different from source account ID")
-		}
+	if req.Date != nil {
+		v.Check(!req.Date.IsZero(), "date", "date is required")
+	}
+
+	if req.Title != nil {
+		v.Check(len(*req.Title) <= 100, "title", "title must not be more than 100 characters")
+	}
+
+	if req.Notes != nil {
+		v.Check(len(*req.Notes) <= 400, "notes", "notes must not be more than 400 characters")
+	}
+}
+
+func ApplyTransactionUpdates(transaction *domain.Transaction, req *UpdateTransactionRequest) {
+	if req.Type != nil {
+		transaction.Type = *req.Type
+	}
+
+	if req.CategoryID != nil {
+		transaction.CategoryID = *req.CategoryID
+	}
+
+	if req.Amount != nil {
+		transaction.Amount = *req.Amount
+	}
+
+	if req.Date != nil {
+		transaction.Date = *req.Date
+	}
+
+	if req.Title != nil {
+		transaction.SetTitle(req.Title)
+	}
+
+	if req.Notes != nil {
+		transaction.SetNotes(req.Notes)
+	}
+
+	if req.FromAccountID != nil {
+		transaction.SetFromAccountID(req.FromAccountID)
+	}
+
+	if req.ToAccountID != nil {
+		transaction.SetToAccountID(req.ToAccountID)
 	}
 }
