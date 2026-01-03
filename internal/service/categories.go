@@ -6,17 +6,17 @@ import (
 )
 
 type CategoryService struct {
-	categoryRepo repository.CategoryRepository
+	CategoryRepo repository.CategoryRepository
 }
 
 func NewCategoryService(categoryRepo repository.CategoryRepository) CategoryService {
 	return CategoryService{
-		categoryRepo: categoryRepo,
+		CategoryRepo: categoryRepo,
 	}
 }
 
 func (s *CategoryService) List(req *ListCategoriesRequest) ([]*CategoryResponse, domain.Metadata, error) {
-	categories, metadata, err := s.categoryRepo.GetAllForUser(req.UserID, req.TransactionType, req.Filters)
+	categories, metadata, err := s.CategoryRepo.GetAllForUser(req.UserID, req.TransactionType, req.Filters)
 	if err != nil {
 		return nil, domain.Metadata{}, err
 	}

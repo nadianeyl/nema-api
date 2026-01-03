@@ -6,17 +6,17 @@ import (
 )
 
 type AccountService struct {
-	accountRepo repository.AccountRepository
+	AccountRepo repository.AccountRepository
 }
 
 func NewAccountService(accountRepo repository.AccountRepository) AccountService {
 	return AccountService{
-		accountRepo: accountRepo,
+		AccountRepo: accountRepo,
 	}
 }
 
 func (s *AccountService) List(req *ListAccountsRequest) ([]*AccountResponse, domain.Metadata, error) {
-	accounts, metadata, err := s.accountRepo.GetAllForUser(req.UserID, req.Class, req.Filters)
+	accounts, metadata, err := s.AccountRepo.GetAllForUser(req.UserID, req.Class, req.Filters)
 	if err != nil {
 		return nil, domain.Metadata{}, err
 	}
@@ -49,7 +49,7 @@ func (s *AccountService) Add(req *AddAccountRequest) (*AccountResponse, error) {
 		IsBudgeted:   req.IsBudgeted,
 	}
 
-	err := s.accountRepo.Insert(account)
+	err := s.AccountRepo.Insert(account)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *AccountService) Add(req *AddAccountRequest) (*AccountResponse, error) {
 }
 
 func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, error) {
-	account, err := s.accountRepo.GetByID(req.ID)
+	account, err := s.AccountRepo.GetByID(req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, er
 		account.IsBudgeted = *req.IsBudgeted
 	}
 
-	err = s.accountRepo.Update(account)
+	err = s.AccountRepo.Update(account)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, er
 }
 
 func (s *AccountService) Delete(req *DeleteAccountRequest) error {
-	account, err := s.accountRepo.GetByID(req.ID)
+	account, err := s.AccountRepo.GetByID(req.ID)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (s *AccountService) Delete(req *DeleteAccountRequest) error {
 		return domain.ErrUserNotAllowed
 	}
 
-	err = s.accountRepo.Delete(account.ID)
+	err = s.AccountRepo.Delete(account.ID)
 	if err != nil {
 		return err
 	}
