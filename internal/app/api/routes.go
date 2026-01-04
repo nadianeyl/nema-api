@@ -21,6 +21,7 @@ func (app *application) routes() http.Handler {
 
 	router.Handle("POST /api/v1/transactions", m.RequireActivatedUser(app.addTransactionHandler))
 	router.Handle("PATCH /api/v1/transactions/{id}", m.RequireActivatedUser(app.updateTransactionHandler))
+	router.Handle("DELETE /api/v1/transactions/{id}", m.RequireActivatedUser(app.deleteTransactionHandler))
 
 	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(m.Authenticate(router))))
 }

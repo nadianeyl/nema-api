@@ -92,3 +92,34 @@ func (app *application) updateTransactionHandler(w http.ResponseWriter, r *http.
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) deleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.httpUtil.ReadIDParam(r)
+	if err != nil {
+		app.httpUtil.NotFoundResponse(w, r)
+		return
+	}
+
+	var req service.DeleteTransactionRequest
+
+	req.ID = *id
+	req.UserID = httputil.ContextGetUserID(r)
+
+	err = app.services.Transactions.Delete(&req)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrRecordNotFound):
+			app.httpUtil.NotFoundResponse(w, r)
+		case errors.Is(err, domain.ErrUserNotAllowed):
+			app.httpUtil.UserNotAllowedResponse(w, r)
+		default:
+			app.httpUtil.ServerErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.httpUtil.WriteJSON(w, httputil.StatusDeleteSuccess, nil, nil, nil)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+	}
+}

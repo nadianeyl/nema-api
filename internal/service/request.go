@@ -253,3 +253,8 @@ func ApplyTransactionUpdates(transaction *domain.Transaction, req *UpdateTransac
 		transaction.SetToAccountID(req.ToAccountID)
 	}
 }
+
+type DeleteTransactionRequest struct {
+	ID     uuid.UUID `json:"-"`
+	UserID uuid.UUID `json:"-"`
+}

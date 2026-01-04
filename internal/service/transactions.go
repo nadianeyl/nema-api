@@ -232,6 +232,33 @@ func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.
 	return res, nil
 }
 
+func (s *TransactionService) Delete(req *DeleteTransactionRequest) error {
+	err := s.TxProvider.WithTx(func(adapters repository.Adapters) error {
+		transaction, err := adapters.TransactionRepo.GetByIDForUpdate(req.ID)
+		if err != nil {
+			return err
+		}
+
+		if transaction.UserID != req.UserID {
+			return domain.ErrUserNotAllowed
+		}
+
+		err = s.revertAccountBalances(adapters, transaction.Type, transaction.Amount, transaction.GetFromAccountID(), transaction.GetToAccountID())
+		if err != nil {
+			return err
+		}
+
+		err = adapters.TransactionRepo.Delete(transaction.ID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
 func (s *TransactionService) updateAccountBalances(adapters repository.Adapters, transaction *domain.Transaction) error {
 	switch transaction.Type {
 	case domain.TransactionTypeExpense:

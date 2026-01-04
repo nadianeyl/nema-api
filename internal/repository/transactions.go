@@ -88,6 +88,45 @@ func (r *TransactionRepository) GetByID(id uuid.UUID) (*domain.Transaction, erro
 	return &transaction, nil
 }
 
+func (r *TransactionRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Transaction, error) {
+	query := `
+		SELECT id, user_id, type, category_id, amount, date, title, notes, from_account_id, to_account_id, created_at, updated_at, version
+		FROM transactions
+		WHERE id = $1
+		FOR UPDATE`
+
+	var transaction domain.Transaction
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, id).Scan(
+		&transaction.ID,
+		&transaction.UserID,
+		&transaction.Type,
+		&transaction.CategoryID,
+		&transaction.Amount,
+		&transaction.Date,
+		&transaction.Title,
+		&transaction.Notes,
+		&transaction.FromAccountID,
+		&transaction.ToAccountID,
+		&transaction.CreatedAt,
+		&transaction.UpdatedAt,
+		&transaction.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, domain.ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &transaction, nil
+}
+
 func (r *TransactionRepository) Update(transaction *domain.Transaction) error {
 	query := `
 		UPDATE transactions
@@ -120,6 +159,31 @@ func (r *TransactionRepository) Update(transaction *domain.Transaction) error {
 		default:
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *TransactionRepository) Delete(id uuid.UUID) error {
+	query := `
+		DELETE FROM transactions
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := r.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrRecordNotFound
 	}
 
 	return nil
