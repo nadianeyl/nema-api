@@ -180,6 +180,11 @@ func ValidateAddTransactionReq(v *validator.Validator, req *AddTransactionReques
 	ValidateAccountID(v, req.Type, req.FromAccountID, req.ToAccountID)
 }
 
+type GetTransactionDetailRequest struct {
+	ID     uuid.UUID `json:"-"`
+	UserID uuid.UUID `json:"-"`
+}
+
 type UpdateTransactionRequest struct {
 	ID            uuid.UUID               `json:"-"`
 	UserID        uuid.UUID               `json:"-"`

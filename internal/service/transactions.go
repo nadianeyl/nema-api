@@ -12,12 +12,14 @@ import (
 )
 
 type TransactionService struct {
-	TxProvider *repository.TxProvider
+	TxProvider      *repository.TxProvider
+	TransactionRepo repository.TransactionRepository
 }
 
-func NewTransactionService(txProvider *repository.TxProvider) TransactionService {
+func NewTransactionService(txProvider *repository.TxProvider, transactionRepo repository.TransactionRepository) TransactionService {
 	return TransactionService{
-		TxProvider: txProvider,
+		TxProvider:      txProvider,
+		TransactionRepo: transactionRepo,
 	}
 }
 
@@ -111,6 +113,39 @@ func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionRespon
 		ToAccountID:   result.GetToAccountID(),
 		CreatedAt:     result.CreatedAt,
 		UpdatedAt:     result.UpdatedAt,
+	}
+
+	return res, nil
+}
+
+func (s *TransactionService) GetDetailByID(req *GetTransactionDetailRequest) (*TransactionDetailResponse, error) {
+	detail, err := s.TransactionRepo.GetDetailByID(req.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if detail.Transaction.UserID != req.UserID {
+		return nil, domain.ErrUserNotAllowed
+	}
+
+	res := &TransactionDetailResponse{
+		Transaction: TransactionResponse{
+			ID:            detail.Transaction.ID,
+			UserID:        detail.Transaction.UserID,
+			Type:          detail.Transaction.Type,
+			CategoryID:    detail.Transaction.CategoryID,
+			Amount:        detail.Transaction.Amount,
+			Date:          detail.Transaction.Date,
+			Title:         detail.Transaction.GetTitle(),
+			Notes:         detail.Transaction.GetNotes(),
+			FromAccountID: detail.Transaction.GetFromAccountID(),
+			ToAccountID:   detail.Transaction.GetToAccountID(),
+			CreatedAt:     detail.Transaction.CreatedAt,
+			UpdatedAt:     detail.Transaction.UpdatedAt,
+		},
+		Category:    CategoryInfo(detail.Category),
+		FromAccount: (*AccountInfo)(detail.FromAccount),
+		ToAccount:   (*AccountInfo)(detail.ToAccount),
 	}
 
 	return res, nil

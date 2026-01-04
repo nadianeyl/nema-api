@@ -20,6 +20,7 @@ func (app *application) routes() http.Handler {
 	router.Handle("GET /api/v1/categories", m.RequireActivatedUser(app.listCategoriesHandler))
 
 	router.Handle("POST /api/v1/transactions", m.RequireActivatedUser(app.addTransactionHandler))
+	router.Handle("GET /api/v1/transactions/{id}", m.RequireActivatedUser(app.getTransactionDetailHandler))
 	router.Handle("PATCH /api/v1/transactions/{id}", m.RequireActivatedUser(app.updateTransactionHandler))
 	router.Handle("DELETE /api/v1/transactions/{id}", m.RequireActivatedUser(app.deleteTransactionHandler))
 

@@ -35,3 +35,8 @@ type Account struct {
 	UpdatedAt    time.Time
 	Version      int
 }
+
+type AccountInfo struct {
+	ID   uuid.UUID
+	Name string
+}

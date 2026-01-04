@@ -127,6 +127,78 @@ func (r *TransactionRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Transact
 	return &transaction, nil
 }
 
+func (r *TransactionRepository) GetDetailByID(id uuid.UUID) (*domain.TransactionDetail, error) {
+	query := `
+		SELECT t.id, t.user_id, t.type, t.category_id, t.amount, t.date, t.title, t.notes, t.from_account_id, t.to_account_id, t.created_at, t.updated_at, t.version,
+		c.id, c.name, fa.id, fa.name, ta.id, ta.name
+		FROM transactions t
+		INNER JOIN categories c ON t.category_id = c.id
+		LEFT JOIN accounts fa ON t.from_account_id = fa.id
+		LEFT JOIN accounts ta ON t.to_account_id = ta.id
+		WHERE t.id = $1`
+
+	var (
+		detail          domain.TransactionDetail
+		fromAccountID   uuid.NullUUID
+		fromAccountName sql.NullString
+		toAccountID     uuid.NullUUID
+		toAccountName   sql.NullString
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, id).Scan(
+		// Transaction fields
+		&detail.Transaction.ID,
+		&detail.Transaction.UserID,
+		&detail.Transaction.Type,
+		&detail.Transaction.CategoryID,
+		&detail.Transaction.Amount,
+		&detail.Transaction.Date,
+		&detail.Transaction.Title,
+		&detail.Transaction.Notes,
+		&detail.Transaction.FromAccountID,
+		&detail.Transaction.ToAccountID,
+		&detail.Transaction.CreatedAt,
+		&detail.Transaction.UpdatedAt,
+		&detail.Transaction.Version,
+		// Category fields
+		&detail.Category.ID,
+		&detail.Category.Name,
+		// From Account fields (nullable)
+		&fromAccountID,
+		&fromAccountName,
+		// To Account fields (nullable)
+		&toAccountID,
+		&toAccountName,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, domain.ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	if fromAccountID.Valid {
+		detail.FromAccount = &domain.AccountInfo{
+			ID:   fromAccountID.UUID,
+			Name: fromAccountName.String,
+		}
+	}
+
+	if toAccountID.Valid {
+		detail.ToAccount = &domain.AccountInfo{
+			ID:   toAccountID.UUID,
+			Name: toAccountName.String,
+		}
+	}
+
+	return &detail, nil
+}
+
 func (r *TransactionRepository) Update(transaction *domain.Transaction) error {
 	query := `
 		UPDATE transactions
