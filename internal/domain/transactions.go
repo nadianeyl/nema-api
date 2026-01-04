@@ -99,3 +99,10 @@ func (t *Transaction) SetToAccountID(id *uuid.UUID) {
 		t.ToAccountID = uuid.NullUUID{}
 	}
 }
+
+type TransactionDetail struct {
+	Transaction Transaction
+	Category    CategoryInfo
+	FromAccount *AccountInfo
+	ToAccount   *AccountInfo
+}

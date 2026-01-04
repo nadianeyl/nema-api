@@ -20,6 +20,6 @@ func NewServices(repositories repository.Repositories, txProvider *repository.Tx
 		Tokens:       NewTokenService(repositories.Users, repositories.Tokens, logger),
 		Accounts:     NewAccountService(repositories.Accounts),
 		Categories:   NewCategoryService(repositories.Categories),
-		Transactions: NewTransactionService(txProvider),
+		Transactions: NewTransactionService(txProvider, repositories.Transactions),
 	}
 }

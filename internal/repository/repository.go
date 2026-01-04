@@ -12,17 +12,19 @@ type db interface {
 }
 
 type Repositories struct {
-	Users      UserRepository
-	Tokens     TokenRepository
-	Accounts   AccountRepository
-	Categories CategoryRepository
+	Users        UserRepository
+	Tokens       TokenRepository
+	Accounts     AccountRepository
+	Categories   CategoryRepository
+	Transactions TransactionRepository
 }
 
 func NewRepositories(db *sql.DB) Repositories {
 	return Repositories{
-		Users:      UserRepository{DB: db},
-		Tokens:     TokenRepository{DB: db},
-		Accounts:   AccountRepository{DB: db},
-		Categories: CategoryRepository{DB: db},
+		Users:        UserRepository{DB: db},
+		Tokens:       TokenRepository{DB: db},
+		Accounts:     AccountRepository{DB: db},
+		Categories:   CategoryRepository{DB: db},
+		Transactions: TransactionRepository{DB: db},
 	}
 }

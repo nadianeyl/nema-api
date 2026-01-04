@@ -42,6 +42,11 @@ type AccountResponse struct {
 	UpdatedAt    time.Time           `json:"updated_at"`
 }
 
+type AccountInfo struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
 type CategoryResponse struct {
 	ID              uuid.UUID              `json:"id"`
 	UserID          uuid.NullUUID          `json:"user_id"`
@@ -49,6 +54,11 @@ type CategoryResponse struct {
 	TransactionType domain.TransactionType `json:"transaction_type"`
 	CreatedAt       time.Time              `json:"created_at"`
 	UpdatedAt       time.Time              `json:"updated_at"`
+}
+
+type CategoryInfo struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
 
 type TransactionResponse struct {
@@ -64,4 +74,11 @@ type TransactionResponse struct {
 	ToAccountID   *uuid.UUID             `json:"to_account_id"`
 	CreatedAt     time.Time              `json:"created_at"`
 	UpdatedAt     time.Time              `json:"updated_at"`
+}
+
+type TransactionDetailResponse struct {
+	Transaction TransactionResponse `json:"transaction"`
+	Category    CategoryInfo        `json:"category"`
+	FromAccount *AccountInfo        `json:"from_account"`
+	ToAccount   *AccountInfo        `json:"to_account"`
 }

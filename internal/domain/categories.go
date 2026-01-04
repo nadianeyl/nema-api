@@ -15,3 +15,8 @@ type Category struct {
 	UpdatedAt       time.Time
 	Version         int
 }
+
+type CategoryInfo struct {
+	ID   uuid.UUID
+	Name string
+}
