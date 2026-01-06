@@ -106,3 +106,13 @@ type TransactionDetail struct {
 	FromAccount *AccountInfo
 	ToAccount   *AccountInfo
 }
+
+type TransactionFilters struct {
+	Type       TransactionType
+	CategoryID string
+	AccountID  string
+	StartDate  string
+	EndDate    string
+	Title      string
+	Filters
+}

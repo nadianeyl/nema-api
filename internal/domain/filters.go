@@ -1,10 +1,15 @@
 package domain
 
-import "math"
+import (
+	"math"
+	"strings"
+)
 
 type Filters struct {
-	Limit int
-	Page  int
+	Limit        int
+	Page         int
+	Sort         string
+	SortSafelist []string
 }
 
 type Metadata struct {
@@ -13,6 +18,24 @@ type Metadata struct {
 	FirstPage    int `json:"first_page,omitempty"`
 	LastPage     int `json:"last_page,omitempty"`
 	TotalRecords int `json:"total_records,omitempty"`
+}
+
+func (f Filters) SortColumn() string {
+	for _, safeValue := range f.SortSafelist {
+		if f.Sort == safeValue {
+			return strings.TrimPrefix(f.Sort, "-")
+		}
+	}
+
+	panic("unsafe sort parameter: " + f.Sort)
+}
+
+func (f Filters) SortDirection() string {
+	if strings.HasPrefix(f.Sort, "-") {
+		return "DESC"
+	}
+
+	return "ASC"
 }
 
 func (f Filters) GetLimit() int {

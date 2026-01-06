@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,6 +14,104 @@ import (
 
 type TransactionRepository struct {
 	DB db
+}
+
+func (r *TransactionRepository) GetAllForUser(userID uuid.UUID, filters domain.TransactionFilters) ([]*domain.Transaction, domain.Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) OVER(), id, user_id, type, category_id, amount, date, title, notes, from_account_id, to_account_id, created_at, updated_at, version
+		FROM transactions
+		WHERE user_id = $1
+		AND (type = $2 OR $2 IS NULL)
+		AND (category_id = $3 OR $3 IS NULL)
+		AND ((from_account_id = $4 OR to_account_id = $4) OR $4 IS NULL)
+		AND (date >= $5 OR $5 IS NULL)
+		AND (date <= $6 OR $6 IS NULL)
+		AND (to_tsvector('simple', COALESCE(title, '')) @@ plainto_tsquery('simple', $7) OR $7 = '')
+		ORDER BY %s %s, created_at DESC, id ASC
+		LIMIT $8 OFFSET $9`, filters.SortColumn(), filters.SortDirection())
+
+	var typeParam sql.NullString
+	if filters.Type != "" {
+		typeParam = sql.NullString{String: filters.Type.String(), Valid: true}
+	}
+
+	var categoryIDParam sql.NullString
+	if filters.CategoryID != "" {
+		categoryIDParam = sql.NullString{String: filters.CategoryID, Valid: true}
+	}
+
+	var accountIDParam sql.NullString
+	if filters.AccountID != "" {
+		accountIDParam = sql.NullString{String: filters.AccountID, Valid: true}
+	}
+
+	var startDateParam sql.NullString
+	if filters.StartDate != "" {
+		startDateParam = sql.NullString{String: filters.StartDate, Valid: true}
+	}
+
+	var endDateParam sql.NullString
+	if filters.EndDate != "" {
+		endDateParam = sql.NullString{String: filters.EndDate, Valid: true}
+	}
+
+	args := []any{
+		userID,
+		typeParam,
+		categoryIDParam,
+		accountIDParam,
+		startDateParam,
+		endDateParam,
+		filters.Title,
+		filters.GetLimit(),
+		filters.GetOffset(),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := r.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, domain.Metadata{}, err
+	}
+	defer rows.Close()
+
+	totalRecords := 0
+	transactions := make([]*domain.Transaction, 0)
+
+	for rows.Next() {
+		var transaction domain.Transaction
+
+		err := rows.Scan(
+			&totalRecords,
+			&transaction.ID,
+			&transaction.UserID,
+			&transaction.Type,
+			&transaction.CategoryID,
+			&transaction.Amount,
+			&transaction.Date,
+			&transaction.Title,
+			&transaction.Notes,
+			&transaction.FromAccountID,
+			&transaction.ToAccountID,
+			&transaction.CreatedAt,
+			&transaction.UpdatedAt,
+			&transaction.Version,
+		)
+		if err != nil {
+			return nil, domain.Metadata{}, err
+		}
+
+		transactions = append(transactions, &transaction)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, domain.Metadata{}, err
+	}
+
+	metadata := domain.GenerateMetadata(filters.GetLimit(), filters.GetPage(), totalRecords)
+
+	return transactions, metadata, nil
 }
 
 func (r *TransactionRepository) Insert(transaction *domain.Transaction) error {

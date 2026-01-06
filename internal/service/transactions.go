@@ -23,6 +23,33 @@ func NewTransactionService(txProvider *repository.TxProvider, transactionRepo re
 	}
 }
 
+func (s *TransactionService) List(req *ListTransactionsRequest) ([]*TransactionResponse, domain.Metadata, error) {
+	transactions, metadata, err := s.TransactionRepo.GetAllForUser(req.UserID, req.TransactionFilters)
+	if err != nil {
+		return nil, domain.Metadata{}, err
+	}
+
+	res := make([]*TransactionResponse, 0)
+	for _, transaction := range transactions {
+		res = append(res, &TransactionResponse{
+			ID:            transaction.ID,
+			UserID:        transaction.UserID,
+			Type:          transaction.Type,
+			CategoryID:    transaction.CategoryID,
+			Amount:        transaction.Amount,
+			Date:          transaction.Date,
+			Title:         transaction.GetTitle(),
+			Notes:         transaction.GetNotes(),
+			FromAccountID: transaction.GetFromAccountID(),
+			ToAccountID:   transaction.GetToAccountID(),
+			CreatedAt:     transaction.CreatedAt,
+			UpdatedAt:     transaction.UpdatedAt,
+		})
+	}
+
+	return res, metadata, nil
+}
+
 func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionResponse, error) {
 	var result *domain.Transaction
 
