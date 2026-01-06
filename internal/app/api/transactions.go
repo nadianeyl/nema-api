@@ -10,6 +10,40 @@ import (
 	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
+func (app *application) listTransactionsHandler(w http.ResponseWriter, r *http.Request) {
+	var req service.ListTransactionsRequest
+
+	v := validator.New()
+	qs := r.URL.Query()
+	req.Type = domain.TransactionType(app.httpUtil.ReadString(qs, "type", ""))
+	req.CategoryID = app.httpUtil.ReadString(qs, "category_id", "")
+	req.AccountID = app.httpUtil.ReadString(qs, "account_id", "")
+	req.StartDate = app.httpUtil.ReadString(qs, "start_date", "")
+	req.EndDate = app.httpUtil.ReadString(qs, "end_date", "")
+	req.Title = app.httpUtil.ReadString(qs, "title", "")
+	req.Limit = app.httpUtil.ReadInt(qs, "limit", 10, v)
+	req.Page = app.httpUtil.ReadInt(qs, "page", 1, v)
+	req.Sort = app.httpUtil.ReadString(qs, "sort", "-date")
+	req.SortSafelist = []string{"date", "amount", "-date", "-amount"}
+	req.UserID = httputil.ContextGetUserID(r)
+
+	if service.ValidateListTransactionsReq(v, &req); !v.Valid() {
+		app.httpUtil.FailedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	res, metadata, err := app.services.Transactions.List(&req)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.httpUtil.WriteJSON(w, httputil.StatusRetrieveSuccess, res, &metadata, nil)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) addTransactionHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.AddTransactionRequest
 

@@ -128,6 +128,49 @@ func ValidateListCategoriesReq(v *validator.Validator, req *ListCategoriesReques
 	ValidateFilters(v, req.Filters)
 }
 
+type ListTransactionsRequest struct {
+	UserID uuid.UUID `json:"-"`
+	domain.TransactionFilters
+}
+
+func ValidateListTransactionsReq(v *validator.Validator, req *ListTransactionsRequest) {
+	if req.Type != "" {
+		v.Check(validator.PermittedValue(req.Type, domain.GetTransactionTypes()...), "type", "type is invalid")
+	}
+
+	if req.CategoryID != "" {
+		_, err := uuid.Parse(req.CategoryID)
+		v.Check(err == nil, "category_id", "category ID must be a valid UUID")
+	}
+
+	if req.AccountID != "" {
+		_, err := uuid.Parse(req.AccountID)
+		v.Check(err == nil, "account_id", "account ID must be a valid UUID")
+	}
+
+	if req.StartDate != "" {
+		_, err := time.Parse(time.RFC3339, req.StartDate)
+		v.Check(err == nil, "start_date", "start date must be a valid RFC3339 timestamp")
+	}
+
+	if req.EndDate != "" {
+		_, err := time.Parse(time.RFC3339, req.EndDate)
+		v.Check(err == nil, "end_date", "end date must be a valid RFC3339 timestamp")
+	}
+
+	if req.StartDate != "" && req.EndDate != "" {
+		startDate, _ := time.Parse(time.RFC3339, req.StartDate)
+		endDate, _ := time.Parse(time.RFC3339, req.EndDate)
+		v.Check(!startDate.After(endDate), "end_date", "end date must be after start date")
+	}
+
+	if req.Title != "" {
+		v.Check(len(req.Title) <= 100, "title", "title must not be more than 100 characters")
+	}
+
+	ValidateFilters(v, req.Filters)
+}
+
 type AddTransactionRequest struct {
 	UserID        uuid.UUID              `json:"-"`
 	Type          domain.TransactionType `json:"type"`
