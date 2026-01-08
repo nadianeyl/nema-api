@@ -7,17 +7,17 @@ import (
 	"github.com/nadianeyl/nema-api/internal/httputil"
 )
 
-func (app *Application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
 	data := httputil.Envelope{
 		"service_status": "available",
 		"system_info": map[string]string{
-			"environment": app.Config.Env,
+			"environment": app.config.Env,
 			"version":     config.Version,
 		},
 	}
 
-	err := app.HTTPUtil.WriteJSON(w, httputil.StatusSuccess, data, nil)
+	err := app.httpUtil.WriteJSON(w, httputil.StatusSuccess, data, nil, nil)
 	if err != nil {
-		app.HTTPUtil.ServerErrorResponse(w, r, err)
+		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
 }

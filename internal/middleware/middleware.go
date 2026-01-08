@@ -1,31 +1,38 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/nadianeyl/nema-api/internal/config"
+	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/httputil"
 	"github.com/nadianeyl/nema-api/internal/jsonlog"
+	"github.com/nadianeyl/nema-api/internal/service"
+	"github.com/nadianeyl/nema-api/internal/validator"
 )
 
 type Middleware struct {
-	Config   config.Config
-	Logger   *jsonlog.Logger
-	HTTPUtil httputil.HTTPUtil
+	config      config.Config
+	logger      *jsonlog.Logger
+	httpUtil    httputil.HTTPUtil
+	userService service.UserService
 }
 
-func New(cfg config.Config, logger *jsonlog.Logger, httpUtil httputil.HTTPUtil) Middleware {
+func New(cfg config.Config, l *jsonlog.Logger, httpUtil httputil.HTTPUtil, userService service.UserService) Middleware {
 	return Middleware{
-		Config:   cfg,
-		Logger:   logger,
-		HTTPUtil: httpUtil,
+		config:      cfg,
+		logger:      l,
+		httpUtil:    httpUtil,
+		userService: userService,
 	}
 }
 
 func (m *Middleware) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m.Logger.LogInfo("request", map[string]string{
+		m.logger.LogInfo("request", map[string]string{
 			"network_address": r.RemoteAddr,
 			"protocol":        r.Proto,
 			"request_method":  r.Method,
@@ -44,8 +51,8 @@ func (m *Middleware) EnableCORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		if origin != "" {
-			for i := range m.Config.Cors.TrustedOrigins {
-				if origin == m.Config.Cors.TrustedOrigins[i] {
+			for i := range m.config.Cors.TrustedOrigins {
+				if origin == m.config.Cors.TrustedOrigins[i] {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
 
 					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
@@ -71,10 +78,80 @@ func (m *Middleware) RecoverPanic(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
-				m.HTTPUtil.ServerErrorResponse(w, r, fmt.Errorf("%s", err))
+				m.httpUtil.ServerErrorResponse(w, r, fmt.Errorf("%s", err))
 			}
 		}()
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (m *Middleware) Authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Authorization")
+
+		authorizationHeader := r.Header.Get("Authorization")
+
+		if authorizationHeader == "" {
+			r = httputil.ContextSetUser(r, service.AnonymousUser)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		headerParts := strings.Split(authorizationHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			m.httpUtil.InvalidAuthTokenResponse(w, r)
+			return
+		}
+
+		token := headerParts[1]
+
+		v := validator.New()
+		if service.ValidateTokenPlaintext(v, token); !v.Valid() {
+			m.httpUtil.InvalidAuthTokenResponse(w, r)
+			return
+		}
+
+		user, err := m.userService.GetForToken(domain.ScopeAuthentication, token)
+		if err != nil {
+			switch {
+			case errors.Is(err, domain.ErrRecordNotFound):
+				m.httpUtil.InvalidAuthTokenResponse(w, r)
+			default:
+				m.httpUtil.ServerErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		r = httputil.ContextSetUser(r, user)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *Middleware) RequireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := httputil.ContextGetUser(r)
+
+		if user.IsAnonymous() {
+			m.httpUtil.AuthenticationRequiredResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *Middleware) RequireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := httputil.ContextGetUser(r)
+
+		if !user.Activated {
+			m.httpUtil.InactiveUserAccountResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
+	return m.RequireAuthenticatedUser(fn)
 }

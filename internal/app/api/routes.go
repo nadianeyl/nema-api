@@ -1,14 +1,34 @@
 package api
 
-import (
-	"net/http"
-)
+import "net/http"
 
-func (app *Application) routes() http.Handler {
+func (app *application) routes() http.Handler {
 	router := http.NewServeMux()
-	m := app.Middleware
+	m := app.middleware
 
-	router.HandleFunc("/api/v1/healthcheck", app.healthcheckHandler)
+	router.Handle("GET /api/v1/healthcheck", http.HandlerFunc(app.healthcheckHandler))
 
-	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(router)))
+	router.Handle("POST /api/v1/users", http.HandlerFunc(app.registerUserHandler))
+	router.Handle("PUT /api/v1/users/activated", http.HandlerFunc(app.activateUserHandler))
+	router.Handle("POST /api/v1/users/authentication", http.HandlerFunc(app.createAuthTokenHandler))
+
+	router.Handle("GET /api/v1/accounts", m.RequireActivatedUser(app.listAccountsHandler))
+	router.Handle("POST /api/v1/accounts", m.RequireActivatedUser(app.addAccountHandler))
+	router.Handle("PATCH /api/v1/accounts/{id}", m.RequireActivatedUser(app.updateAccountHandler))
+	router.Handle("DELETE /api/v1/accounts/{id}", m.RequireActivatedUser(app.deleteAccountHandler))
+
+	router.Handle("GET /api/v1/categories", m.RequireActivatedUser(app.listCategoriesHandler))
+
+	router.Handle("GET /api/v1/transactions", m.RequireActivatedUser(app.listTransactionsHandler))
+	router.Handle("POST /api/v1/transactions", m.RequireActivatedUser(app.addTransactionHandler))
+	router.Handle("GET /api/v1/transactions/{id}", m.RequireActivatedUser(app.getTransactionDetailHandler))
+	router.Handle("PATCH /api/v1/transactions/{id}", m.RequireActivatedUser(app.updateTransactionHandler))
+	router.Handle("DELETE /api/v1/transactions/{id}", m.RequireActivatedUser(app.deleteTransactionHandler))
+
+	router.Handle("POST /api/v1/budgets", m.RequireActivatedUser(app.createBudgetHandler))
+	router.Handle("GET /api/v1/budgets/{id}", m.RequireActivatedUser(app.getBudgetDetailsHandler))
+
+	router.Handle("POST /api/v1/budgets/{id}/items", m.RequireActivatedUser(app.createBudgetItemHandler))
+
+	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(m.Authenticate(router))))
 }

@@ -1,0 +1,29 @@
+package service
+
+import (
+	"github.com/nadianeyl/nema-api/internal/jsonlog"
+	"github.com/nadianeyl/nema-api/internal/mailer"
+	"github.com/nadianeyl/nema-api/internal/repository"
+)
+
+type Services struct {
+	Users        UserService
+	Tokens       TokenService
+	Accounts     AccountService
+	Categories   CategoryService
+	Transactions TransactionService
+	Budgets      BudgetService
+	BudgetItems  BudgetItemService
+}
+
+func NewServices(repositories repository.Repositories, txProvider *repository.TxProvider, m mailer.Mailer, logger *jsonlog.Logger) Services {
+	return Services{
+		Users:        NewUserService(repositories.Users, repositories.Tokens, m, logger),
+		Tokens:       NewTokenService(repositories.Users, repositories.Tokens, logger),
+		Accounts:     NewAccountService(repositories.Accounts),
+		Categories:   NewCategoryService(repositories.Categories),
+		Transactions: NewTransactionService(txProvider, repositories.Transactions),
+		Budgets:      NewBudgetService(repositories.Budgets, repositories.BudgetItems, repositories.Categories, repositories.Transactions),
+		BudgetItems:  NewBudgetItemService(repositories.BudgetItems, repositories.Budgets, repositories.Categories),
+	}
+}
