@@ -336,6 +336,7 @@ func ValidateCreateBudgetReq(v *validator.Validator, req *CreateBudgetRequest) {
 
 type CreateBudgetItemRequest struct {
 	BudgetID    uuid.UUID       `json:"-"`
+	UserID      uuid.UUID       `json:"-"`
 	CategoryID  uuid.UUID       `json:"category_id"`
 	LimitAmount decimal.Decimal `json:"limit_amount"`
 }

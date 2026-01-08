@@ -26,6 +26,7 @@ func (app *application) createBudgetItemHandler(w http.ResponseWriter, r *http.R
 	}
 
 	req.BudgetID = *id
+	req.UserID = httputil.ContextGetUserID(r)
 
 	v := validator.New()
 	if service.ValidateCreateBudgetItemReq(v, &req); !v.Valid() {
@@ -36,6 +37,8 @@ func (app *application) createBudgetItemHandler(w http.ResponseWriter, r *http.R
 	res, err := app.services.BudgetItems.Create(&req)
 	if err != nil {
 		switch {
+		case errors.Is(err, domain.ErrUserNotAllowed):
+			app.httpUtil.UserNotAllowedResponse(w, r)
 		case errors.Is(err, domain.ErrRecordNotFound), errors.Is(err, domain.ErrDuplicateRecord):
 			app.httpUtil.BadRequestResponse(w, r, err)
 		default:

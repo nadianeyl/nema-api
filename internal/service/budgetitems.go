@@ -25,6 +25,10 @@ func (s *BudgetItemService) Create(req *CreateBudgetItemRequest) (*BudgetItemRes
 		return nil, err
 	}
 
+	if budget.UserID != req.UserID {
+		return nil, domain.ErrUserNotAllowed
+	}
+
 	_, err = s.CategoryRepo.GetByIDAndTypeForUser(req.CategoryID, domain.TransactionTypeExpense, budget.UserID)
 	if err != nil {
 		return nil, err
