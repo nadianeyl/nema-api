@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/govalues/decimal"
 
 	"github.com/nadianeyl/nema-api/internal/domain"
 )
@@ -358,4 +359,36 @@ func (r *TransactionRepository) Delete(id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *TransactionRepository) GetTotalSpentByCategoryAndDateRange(userID, categoryID uuid.UUID, startDate, endDate time.Time) (decimal.Decimal, error) {
+	query := `
+		SELECT COALESCE(SUM(t.amount), 0) as total_spent
+		FROM transactions t
+		INNER JOIN accounts a ON t.from_account_id = a.id
+		WHERE t.user_id = $1
+		AND t.category_id = $2
+		AND t.type = 'expense'
+		AND t.date >= $3
+		AND t.date <= $4
+		AND a.is_budgeted = true`
+
+	args := []any{
+		categoryID,
+		userID,
+		startDate,
+		endDate,
+	}
+
+	var totalSpent decimal.Decimal
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, args...).Scan(&totalSpent)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	return totalSpent, nil
 }

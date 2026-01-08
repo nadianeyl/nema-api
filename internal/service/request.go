@@ -336,6 +336,7 @@ func ValidateCreateBudgetReq(v *validator.Validator, req *CreateBudgetRequest) {
 
 type CreateBudgetItemRequest struct {
 	BudgetID    uuid.UUID       `json:"-"`
+	UserID      uuid.UUID       `json:"-"`
 	CategoryID  uuid.UUID       `json:"category_id"`
 	LimitAmount decimal.Decimal `json:"limit_amount"`
 }
@@ -344,4 +345,9 @@ func ValidateCreateBudgetItemReq(v *validator.Validator, req *CreateBudgetItemRe
 	v.Check(req.CategoryID != uuid.Nil, "category_id", "category ID is required")
 
 	v.Check(req.LimitAmount.IsPos(), "limit_amount", "limit amount must be positive")
+}
+
+type GetBudgetDetailRequest struct {
+	ID     uuid.UUID `json:"-"`
+	UserID uuid.UUID `json:"-"`
 }

@@ -102,3 +102,31 @@ type BudgetItemResponse struct {
 	CreatedAt   time.Time       `json:"created_at"`
 	UpdatedAt   time.Time       `json:"updated_at"`
 }
+
+type BudgetDetailResponse struct {
+	ID                   uuid.UUID                  `json:"id"`
+	UserID               uuid.UUID                  `json:"user_id"`
+	Name                 string                     `json:"name"`
+	AvailableBudget      decimal.Decimal            `json:"available_budget"`
+	TotalLimitAmount     decimal.Decimal            `json:"total_limit_amount"`
+	TotalSpentAmount     decimal.Decimal            `json:"total_spent_amount"`
+	TotalRemainingAmount decimal.Decimal            `json:"total_remaining_amount"`
+	StartDate            time.Time                  `json:"start_date"`
+	EndDate              time.Time                  `json:"end_date"`
+	Items                []BudgetItemDetailResponse `json:"items"`
+	CreatedAt            time.Time                  `json:"created_at"`
+	UpdatedAt            time.Time                  `json:"updated_at"`
+}
+
+type BudgetItemDetailResponse struct {
+	ID              uuid.UUID       `json:"id"`
+	BudgetID        uuid.UUID       `json:"budget_id"`
+	CategoryID      uuid.UUID       `json:"category_id"`
+	CategoryName    string          `json:"category_name"`
+	LimitAmount     decimal.Decimal `json:"limit_amount"`
+	SpentAmount     decimal.Decimal `json:"spent_amount"`
+	RemainingAmount decimal.Decimal `json:"remaining_amount"`
+	PercentageUsed  decimal.Decimal `json:"percentage_used"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+}

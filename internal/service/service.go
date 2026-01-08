@@ -23,7 +23,7 @@ func NewServices(repositories repository.Repositories, txProvider *repository.Tx
 		Accounts:     NewAccountService(repositories.Accounts),
 		Categories:   NewCategoryService(repositories.Categories),
 		Transactions: NewTransactionService(txProvider, repositories.Transactions),
-		Budgets:      NewBudgetService(repositories.Budgets),
+		Budgets:      NewBudgetService(repositories.Budgets, repositories.BudgetItems, repositories.Categories, repositories.Transactions),
 		BudgetItems:  NewBudgetItemService(repositories.BudgetItems, repositories.Budgets, repositories.Categories),
 	}
 }

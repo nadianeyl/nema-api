@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 )
 
@@ -40,4 +42,48 @@ func (r *BudgetItemRepository) Insert(item *domain.BudgetItem) error {
 	}
 
 	return nil
+}
+
+func (r *BudgetItemRepository) GetByBudgetID(budgetID uuid.UUID) ([]*domain.BudgetItem, error) {
+	query := `
+		SELECT id, budget_id, category_id, limit_amount, created_at, updated_at, version
+		FROM budget_items
+		WHERE budget_id = $1
+		ORDER BY created_at ASC, id ASC`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := r.DB.QueryContext(ctx, query, budgetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []*domain.BudgetItem
+
+	for rows.Next() {
+		var item domain.BudgetItem
+
+		err := rows.Scan(
+			&item.ID,
+			&item.BudgetID,
+			&item.CategoryID,
+			&item.LimitAmount,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+			&item.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, &item)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
