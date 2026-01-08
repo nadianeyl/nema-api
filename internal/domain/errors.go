@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrDuplicateEmail         = errors.New("duplicate email")
+	ErrDuplicateRecord        = errors.New("duplicate record")
 	ErrRecordNotFound         = errors.New("record not found")
 	ErrEditConflict           = errors.New("edit conflict")
 	ErrInvalidInputValue      = errors.New("invalid input value")

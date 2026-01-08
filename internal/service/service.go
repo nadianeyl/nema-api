@@ -12,6 +12,8 @@ type Services struct {
 	Accounts     AccountService
 	Categories   CategoryService
 	Transactions TransactionService
+	Budgets      BudgetService
+	BudgetItems  BudgetItemService
 }
 
 func NewServices(repositories repository.Repositories, txProvider *repository.TxProvider, m mailer.Mailer, logger *jsonlog.Logger) Services {
@@ -21,5 +23,7 @@ func NewServices(repositories repository.Repositories, txProvider *repository.Tx
 		Accounts:     NewAccountService(repositories.Accounts),
 		Categories:   NewCategoryService(repositories.Categories),
 		Transactions: NewTransactionService(txProvider, repositories.Transactions),
+		Budgets:      NewBudgetService(repositories.Budgets),
+		BudgetItems:  NewBudgetItemService(repositories.BudgetItems, repositories.Budgets, repositories.Categories),
 	}
 }

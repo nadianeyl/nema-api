@@ -82,3 +82,23 @@ type TransactionDetailResponse struct {
 	FromAccount *AccountInfo        `json:"from_account"`
 	ToAccount   *AccountInfo        `json:"to_account"`
 }
+
+type BudgetResponse struct {
+	ID              uuid.UUID       `json:"id"`
+	UserID          uuid.UUID       `json:"user_id"`
+	Name            string          `json:"name"`
+	AvailableBudget decimal.Decimal `json:"available_budget"`
+	StartDate       time.Time       `json:"start_date"`
+	EndDate         time.Time       `json:"end_date"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+}
+
+type BudgetItemResponse struct {
+	ID          uuid.UUID       `json:"id"`
+	BudgetID    uuid.UUID       `json:"budget_id"`
+	CategoryID  uuid.UUID       `json:"category_id"`
+	LimitAmount decimal.Decimal `json:"limit_amount"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+}
