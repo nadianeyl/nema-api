@@ -26,6 +26,7 @@ func (app *application) routes() http.Handler {
 	router.Handle("DELETE /api/v1/transactions/{id}", m.RequireActivatedUser(app.deleteTransactionHandler))
 
 	router.Handle("POST /api/v1/budgets", m.RequireActivatedUser(app.createBudgetHandler))
+	router.Handle("GET /api/v1/budgets/{id}", m.RequireActivatedUser(app.getBudgetDetailsHandler))
 
 	router.Handle("POST /api/v1/budgets/{id}/items", m.RequireActivatedUser(app.createBudgetItemHandler))
 

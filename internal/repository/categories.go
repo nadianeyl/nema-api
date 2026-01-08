@@ -72,6 +72,39 @@ func (r *CategoryRepository) GetAllForUser(userID uuid.UUID, transactionType dom
 	return categories, metadata, nil
 }
 
+func (r *CategoryRepository) GetByIDForUser(id, userID uuid.UUID) (*domain.Category, error) {
+	query := `
+		SELECT id, user_id, name, transaction_type, created_at, updated_at, version
+		FROM categories
+		WHERE id = $1
+		AND (user_id = $2 OR user_id IS NULL)`
+
+	var category domain.Category
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, id, userID).Scan(
+		&category.ID,
+		&category.UserID,
+		&category.Name,
+		&category.TransactionType,
+		&category.CreatedAt,
+		&category.UpdatedAt,
+		&category.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, domain.ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &category, nil
+}
+
 func (r *CategoryRepository) GetByIDAndTypeForUser(id uuid.UUID, transactionType domain.TransactionType, userID uuid.UUID) (*domain.Category, error) {
 	query := `
 		SELECT id, user_id, name, transaction_type, created_at, updated_at, version

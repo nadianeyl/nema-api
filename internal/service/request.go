@@ -346,3 +346,8 @@ func ValidateCreateBudgetItemReq(v *validator.Validator, req *CreateBudgetItemRe
 
 	v.Check(req.LimitAmount.IsPos(), "limit_amount", "limit amount must be positive")
 }
+
+type GetBudgetDetailRequest struct {
+	ID     uuid.UUID `json:"-"`
+	UserID uuid.UUID `json:"-"`
+}
