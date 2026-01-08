@@ -306,3 +306,42 @@ type DeleteTransactionRequest struct {
 	ID     uuid.UUID `json:"-"`
 	UserID uuid.UUID `json:"-"`
 }
+
+type CreateBudgetRequest struct {
+	UserID          uuid.UUID       `json:"-"`
+	Name            string          `json:"name"`
+	AvailableBudget decimal.Decimal `json:"available_budget"`
+	StartDate       string          `json:"start_date"` // YYYY-MM-DD format
+	EndDate         string          `json:"end_date"`   // YYYY-MM-DD format
+}
+
+func ValidateCreateBudgetReq(v *validator.Validator, req *CreateBudgetRequest) {
+	v.Check(req.Name != "", "name", "name is required")
+	v.Check(len(req.Name) <= 100, "name", "name must not be more than 100 characters")
+
+	v.Check(!req.AvailableBudget.IsNeg(), "available_budget", "available budget must be zero or positive")
+
+	v.Check(req.StartDate != "", "start_date", "start date is required")
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	v.Check(err == nil, "start_date", "start date must be in YYYY-MM-DD format")
+
+	v.Check(req.EndDate != "", "end_date", "end date is required")
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	v.Check(err == nil, "end_date", "end date must be in YYYY-MM-DD format")
+
+	if err == nil {
+		v.Check(endDate.After(startDate), "end_date", "end date must be after start date")
+	}
+}
+
+type CreateBudgetItemRequest struct {
+	BudgetID    uuid.UUID       `json:"-"`
+	CategoryID  uuid.UUID       `json:"category_id"`
+	LimitAmount decimal.Decimal `json:"limit_amount"`
+}
+
+func ValidateCreateBudgetItemReq(v *validator.Validator, req *CreateBudgetItemRequest) {
+	v.Check(req.CategoryID != uuid.Nil, "category_id", "category ID is required")
+
+	v.Check(req.LimitAmount.IsPos(), "limit_amount", "limit amount must be positive")
+}

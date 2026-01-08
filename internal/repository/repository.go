@@ -17,6 +17,8 @@ type Repositories struct {
 	Accounts     AccountRepository
 	Categories   CategoryRepository
 	Transactions TransactionRepository
+	Budgets      BudgetRepository
+	BudgetItems  BudgetItemRepository
 }
 
 func NewRepositories(db *sql.DB) Repositories {
@@ -26,5 +28,7 @@ func NewRepositories(db *sql.DB) Repositories {
 		Accounts:     AccountRepository{DB: db},
 		Categories:   CategoryRepository{DB: db},
 		Transactions: TransactionRepository{DB: db},
+		Budgets:      BudgetRepository{DB: db},
+		BudgetItems:  BudgetItemRepository{DB: db},
 	}
 }
