@@ -146,3 +146,18 @@ func (app *application) deleteAccountHandler(w http.ResponseWriter, r *http.Requ
 		app.httpUtil.ServerErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) getNetWorthHandler(w http.ResponseWriter, r *http.Request) {
+	userID := httputil.ContextGetUserID(r)
+
+	res, err := app.services.Accounts.GetNetWorth(userID)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.httpUtil.WriteJSON(w, httputil.StatusRetrieveSuccess, res, nil, nil)
+	if err != nil {
+		app.httpUtil.ServerErrorResponse(w, r, err)
+	}
+}

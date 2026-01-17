@@ -40,3 +40,10 @@ type AccountInfo struct {
 	ID   uuid.UUID
 	Name string
 }
+
+type NetWorth struct {
+	CCE        decimal.Decimal
+	Investment decimal.Decimal
+	Liability  decimal.Decimal
+	Total      decimal.Decimal
+}

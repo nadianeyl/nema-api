@@ -1,6 +1,8 @@
 package service
 
 import (
+	"github.com/google/uuid"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/repository"
 )
@@ -127,4 +129,20 @@ func (s *AccountService) Delete(req *DeleteAccountRequest) error {
 	}
 
 	return nil
+}
+
+func (s *AccountService) GetNetWorth(userID uuid.UUID) (*GetNetWorthResponse, error) {
+	netWorth, err := s.AccountRepo.GetNetWorthForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &GetNetWorthResponse{
+		CCE:        netWorth.CCE,
+		Investment: netWorth.Investment,
+		Liability:  netWorth.Liability,
+		Total:      netWorth.Total,
+	}
+
+	return res, nil
 }

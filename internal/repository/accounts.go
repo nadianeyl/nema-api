@@ -269,3 +269,32 @@ func (r *AccountRepository) Delete(id uuid.UUID) error {
 
 	return nil
 }
+
+func (r *AccountRepository) GetNetWorthForUser(userID uuid.UUID) (*domain.NetWorth, error) {
+	query := `
+		SELECT
+			COALESCE(SUM(CASE WHEN class = 'cce' THEN balance ELSE 0 END), 0) as total_cce,
+			COALESCE(SUM(CASE WHEN class = 'investment' THEN balance ELSE 0 END), 0) as total_investment,
+			COALESCE(SUM(CASE WHEN class = 'liability' THEN balance ELSE 0 END), 0) as total_liability
+		FROM accounts
+		WHERE user_id = $1`
+
+	var netWorth domain.NetWorth
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := r.DB.QueryRowContext(ctx, query, userID).Scan(
+		&netWorth.CCE,
+		&netWorth.Investment,
+		&netWorth.Liability,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	assets, _ := netWorth.CCE.Add(netWorth.Investment)
+	netWorth.Total, _ = assets.Sub(netWorth.Liability)
+
+	return &netWorth, nil
+}
