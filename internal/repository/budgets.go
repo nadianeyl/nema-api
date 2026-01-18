@@ -16,7 +16,7 @@ type BudgetRepository struct {
 	DB db
 }
 
-func (r *BudgetRepository) Insert(budget *domain.Budget) error {
+func (r *BudgetRepository) Insert(ctx context.Context, budget *domain.Budget) error {
 	query := `
 		INSERT INTO budgets (user_id, name, available_budget, start_date, end_date)
 		VALUES ($1, $2, $3, $4, $5)
@@ -30,7 +30,7 @@ func (r *BudgetRepository) Insert(budget *domain.Budget) error {
 		budget.EndDate,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(
@@ -52,7 +52,7 @@ func (r *BudgetRepository) Insert(budget *domain.Budget) error {
 	return nil
 }
 
-func (r *BudgetRepository) GetByID(id uuid.UUID) (*domain.Budget, error) {
+func (r *BudgetRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Budget, error) {
 	query := `
 		SELECT id, user_id, name, available_budget, start_date, end_date, created_at, updated_at, version
 		FROM budgets
@@ -60,7 +60,7 @@ func (r *BudgetRepository) GetByID(id uuid.UUID) (*domain.Budget, error) {
 
 	var budget domain.Budget
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(

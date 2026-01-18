@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/google/uuid"
@@ -23,8 +24,8 @@ func NewTransactionService(txProvider *repository.TxProvider, transactionRepo re
 	}
 }
 
-func (s *TransactionService) List(req *ListTransactionsRequest) ([]*TransactionResponse, domain.Metadata, error) {
-	transactions, metadata, err := s.TransactionRepo.GetAllForUser(req.UserID, req.TransactionFilters)
+func (s *TransactionService) List(ctx context.Context, req *ListTransactionsRequest) ([]*TransactionResponse, domain.Metadata, error) {
+	transactions, metadata, err := s.TransactionRepo.GetAllForUser(ctx, req.UserID, req.TransactionFilters)
 	if err != nil {
 		return nil, domain.Metadata{}, err
 	}
@@ -50,11 +51,11 @@ func (s *TransactionService) List(req *ListTransactionsRequest) ([]*TransactionR
 	return res, metadata, nil
 }
 
-func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionResponse, error) {
+func (s *TransactionService) Add(ctx context.Context, req *AddTransactionRequest) (*TransactionResponse, error) {
 	var result *domain.Transaction
 
-	err := s.TxProvider.WithTx(func(adapters repository.Adapters) error {
-		_, err := adapters.CategoryRepo.GetByIDAndTypeForUser(req.CategoryID, req.Type, req.UserID)
+	err := s.TxProvider.WithTx(ctx, func(adapters repository.Adapters) error {
+		_, err := adapters.CategoryRepo.GetByIDAndTypeForUser(ctx, req.CategoryID, req.Type, req.UserID)
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrRecordNotFound):
@@ -67,7 +68,7 @@ func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionRespon
 		var fromAccount, toAccount *domain.Account
 
 		if req.FromAccountID != nil {
-			fromAccount, err = adapters.AccountRepo.GetByIDForUpdate(*req.FromAccountID)
+			fromAccount, err = adapters.AccountRepo.GetByIDForUpdate(ctx, *req.FromAccountID)
 			if err != nil && errors.Is(err, domain.ErrRecordNotFound) {
 				return domain.ErrInvalidInputValue
 			}
@@ -82,7 +83,7 @@ func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionRespon
 		}
 
 		if req.ToAccountID != nil {
-			toAccount, err = adapters.AccountRepo.GetByIDForUpdate(*req.ToAccountID)
+			toAccount, err = adapters.AccountRepo.GetByIDForUpdate(ctx, *req.ToAccountID)
 			if err != nil && errors.Is(err, domain.ErrRecordNotFound) {
 				return domain.ErrInvalidInputValue
 			}
@@ -109,12 +110,12 @@ func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionRespon
 		transaction.SetFromAccountID(req.FromAccountID)
 		transaction.SetToAccountID(req.ToAccountID)
 
-		err = adapters.TransactionRepo.Insert(transaction)
+		err = adapters.TransactionRepo.Insert(ctx, transaction)
 		if err != nil {
 			return err
 		}
 
-		err = s.updateAccountBalances(adapters, transaction)
+		err = s.updateAccountBalances(ctx, adapters, transaction)
 		if err != nil {
 			return err
 		}
@@ -145,8 +146,8 @@ func (s *TransactionService) Add(req *AddTransactionRequest) (*TransactionRespon
 	return res, nil
 }
 
-func (s *TransactionService) GetDetailByID(req *GetTransactionDetailRequest) (*TransactionDetailResponse, error) {
-	detail, err := s.TransactionRepo.GetDetailByID(req.ID)
+func (s *TransactionService) GetDetailByID(ctx context.Context, req *GetTransactionDetailRequest) (*TransactionDetailResponse, error) {
+	detail, err := s.TransactionRepo.GetDetailByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,11 +179,11 @@ func (s *TransactionService) GetDetailByID(req *GetTransactionDetailRequest) (*T
 	return res, nil
 }
 
-func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.Validator) (*TransactionResponse, error) {
+func (s *TransactionService) Update(ctx context.Context, req *UpdateTransactionRequest, v *validator.Validator) (*TransactionResponse, error) {
 	var result *domain.Transaction
 
-	err := s.TxProvider.WithTx(func(adapters repository.Adapters) error {
-		transaction, err := adapters.TransactionRepo.GetByID(req.ID)
+	err := s.TxProvider.WithTx(ctx, func(adapters repository.Adapters) error {
+		transaction, err := adapters.TransactionRepo.GetByID(ctx, req.ID)
 		if err != nil {
 			return err
 		}
@@ -205,7 +206,7 @@ func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.
 			return domain.ErrInvalidInputValue
 		}
 
-		_, err = adapters.CategoryRepo.GetByIDAndTypeForUser(transaction.CategoryID, transaction.Type, req.UserID)
+		_, err = adapters.CategoryRepo.GetByIDAndTypeForUser(ctx, transaction.CategoryID, transaction.Type, req.UserID)
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrRecordNotFound):
@@ -231,7 +232,7 @@ func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.
 		}
 
 		for accountID := range accountIDs {
-			account, err := adapters.AccountRepo.GetByIDForUpdate(accountID)
+			account, err := adapters.AccountRepo.GetByIDForUpdate(ctx, accountID)
 			if err != nil && errors.Is(err, domain.ErrRecordNotFound) {
 				v.AddError("account_id", "source account ID or destination account ID is invalid")
 				return domain.ErrInvalidInputValue
@@ -246,7 +247,7 @@ func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.
 			}
 		}
 
-		err = s.revertAccountBalances(adapters, oldType, oldAmount, oldFromAccountID, oldToAccountID)
+		err = s.revertAccountBalances(ctx, adapters, oldType, oldAmount, oldFromAccountID, oldToAccountID)
 		if err != nil {
 			return err
 		}
@@ -258,12 +259,12 @@ func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.
 			transaction.SetFromAccountID(nil)
 		}
 
-		err = adapters.TransactionRepo.Update(transaction)
+		err = adapters.TransactionRepo.Update(ctx, transaction)
 		if err != nil {
 			return err
 		}
 
-		err = s.updateAccountBalances(adapters, transaction)
+		err = s.updateAccountBalances(ctx, adapters, transaction)
 		if err != nil {
 			return err
 		}
@@ -294,9 +295,9 @@ func (s *TransactionService) Update(req *UpdateTransactionRequest, v *validator.
 	return res, nil
 }
 
-func (s *TransactionService) Delete(req *DeleteTransactionRequest) error {
-	err := s.TxProvider.WithTx(func(adapters repository.Adapters) error {
-		transaction, err := adapters.TransactionRepo.GetByIDForUpdate(req.ID)
+func (s *TransactionService) Delete(ctx context.Context, req *DeleteTransactionRequest) error {
+	err := s.TxProvider.WithTx(ctx, func(adapters repository.Adapters) error {
+		transaction, err := adapters.TransactionRepo.GetByIDForUpdate(ctx, req.ID)
 		if err != nil {
 			return err
 		}
@@ -305,12 +306,12 @@ func (s *TransactionService) Delete(req *DeleteTransactionRequest) error {
 			return domain.ErrUserNotAllowed
 		}
 
-		err = s.revertAccountBalances(adapters, transaction.Type, transaction.Amount, transaction.GetFromAccountID(), transaction.GetToAccountID())
+		err = s.revertAccountBalances(ctx, adapters, transaction.Type, transaction.Amount, transaction.GetFromAccountID(), transaction.GetToAccountID())
 		if err != nil {
 			return err
 		}
 
-		err = adapters.TransactionRepo.Delete(transaction.ID)
+		err = adapters.TransactionRepo.Delete(ctx, transaction.ID)
 		if err != nil {
 			return err
 		}
@@ -321,46 +322,46 @@ func (s *TransactionService) Delete(req *DeleteTransactionRequest) error {
 	return err
 }
 
-func (s *TransactionService) updateAccountBalances(adapters repository.Adapters, transaction *domain.Transaction) error {
+func (s *TransactionService) updateAccountBalances(ctx context.Context, adapters repository.Adapters, transaction *domain.Transaction) error {
 	switch transaction.Type {
 	case domain.TransactionTypeExpense:
 		negativeAmount := transaction.Amount.Neg()
 		fromAccountID := transaction.GetFromAccountID()
-		return adapters.AccountRepo.UpdateBalance(*fromAccountID, negativeAmount)
+		return adapters.AccountRepo.UpdateBalance(ctx, *fromAccountID, negativeAmount)
 	case domain.TransactionTypeIncome:
 		toAccountID := transaction.GetToAccountID()
-		return adapters.AccountRepo.UpdateBalance(*toAccountID, transaction.Amount)
+		return adapters.AccountRepo.UpdateBalance(ctx, *toAccountID, transaction.Amount)
 	case domain.TransactionTypeTransfer:
 		negativeAmount := transaction.Amount.Neg()
 		fromAccountID := transaction.GetFromAccountID()
 		toAccountID := transaction.GetToAccountID()
 
-		err := adapters.AccountRepo.UpdateBalance(*fromAccountID, negativeAmount)
+		err := adapters.AccountRepo.UpdateBalance(ctx, *fromAccountID, negativeAmount)
 		if err != nil {
 			return err
 		}
 
-		return adapters.AccountRepo.UpdateBalance(*toAccountID, transaction.Amount)
+		return adapters.AccountRepo.UpdateBalance(ctx, *toAccountID, transaction.Amount)
 	default:
 		return domain.ErrInvalidTransactionType
 	}
 }
 
-func (s *TransactionService) revertAccountBalances(adapters repository.Adapters, transactionType domain.TransactionType, amount decimal.Decimal, fromAccountID, toAccountID *uuid.UUID) error {
+func (s *TransactionService) revertAccountBalances(ctx context.Context, adapters repository.Adapters, transactionType domain.TransactionType, amount decimal.Decimal, fromAccountID, toAccountID *uuid.UUID) error {
 	switch transactionType {
 	case domain.TransactionTypeExpense:
-		return adapters.AccountRepo.UpdateBalance(*fromAccountID, amount)
+		return adapters.AccountRepo.UpdateBalance(ctx, *fromAccountID, amount)
 	case domain.TransactionTypeIncome:
 		negativeAmount := amount.Neg()
-		return adapters.AccountRepo.UpdateBalance(*toAccountID, negativeAmount)
+		return adapters.AccountRepo.UpdateBalance(ctx, *toAccountID, negativeAmount)
 	case domain.TransactionTypeTransfer:
-		err := adapters.AccountRepo.UpdateBalance(*fromAccountID, amount)
+		err := adapters.AccountRepo.UpdateBalance(ctx, *fromAccountID, amount)
 		if err != nil {
 			return err
 		}
 
 		negativeAmount := amount.Neg()
-		return adapters.AccountRepo.UpdateBalance(*toAccountID, negativeAmount)
+		return adapters.AccountRepo.UpdateBalance(ctx, *toAccountID, negativeAmount)
 	default:
 		return domain.ErrInvalidTransactionType
 	}

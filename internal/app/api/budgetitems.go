@@ -34,7 +34,7 @@ func (app *application) createBudgetItemHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	res, err := app.services.BudgetItems.Create(&req)
+	res, err := app.services.BudgetItems.Create(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrUserNotAllowed):

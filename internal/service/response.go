@@ -130,3 +130,10 @@ type BudgetItemDetailResponse struct {
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       time.Time       `json:"updated_at"`
 }
+
+type GetNetWorthResponse struct {
+	CCE        decimal.Decimal `json:"cce"`
+	Investment decimal.Decimal `json:"investment"`
+	Liability  decimal.Decimal `json:"liability"`
+	Total      decimal.Decimal `json:"total"`
+}

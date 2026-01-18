@@ -27,7 +27,7 @@ func (app *application) createBudgetHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	res, err := app.services.Budgets.Create(&req)
+	res, err := app.services.Budgets.Create(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDuplicateRecord):
@@ -56,7 +56,7 @@ func (app *application) getBudgetDetailsHandler(w http.ResponseWriter, r *http.R
 	req.ID = *id
 	req.UserID = httputil.ContextGetUserID(r)
 
-	res, err := app.services.Budgets.GetByID(&req)
+	res, err := app.services.Budgets.GetByID(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):

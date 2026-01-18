@@ -30,5 +30,7 @@ func (app *application) routes() http.Handler {
 
 	router.Handle("POST /api/v1/budgets/{id}/items", m.RequireActivatedUser(app.createBudgetItemHandler))
 
+	router.Handle("GET /api/v1/net-worth", m.RequireActivatedUser(app.getNetWorthHandler))
+
 	return m.RecoverPanic(m.EnableCORS(m.RequestLogger(m.Authenticate(router))))
 }
