@@ -15,7 +15,7 @@ type CategoryRepository struct {
 	DB db
 }
 
-func (r *CategoryRepository) GetAllForUser(userID uuid.UUID, transactionType domain.TransactionType, filters domain.Filters) ([]*domain.Category, domain.Metadata, error) {
+func (r *CategoryRepository) GetAllForUser(ctx context.Context, userID uuid.UUID, transactionType domain.TransactionType, filters domain.Filters) ([]*domain.Category, domain.Metadata, error) {
 	query := `
 		SELECT COUNT(*) OVER(), id, user_id, name, transaction_type, created_at, updated_at, version
 		FROM categories
@@ -31,7 +31,7 @@ func (r *CategoryRepository) GetAllForUser(userID uuid.UUID, transactionType dom
 
 	args := []any{userID, transactionTypeParam, filters.GetLimit(), filters.GetOffset()}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
@@ -72,7 +72,7 @@ func (r *CategoryRepository) GetAllForUser(userID uuid.UUID, transactionType dom
 	return categories, metadata, nil
 }
 
-func (r *CategoryRepository) GetByIDForUser(id, userID uuid.UUID) (*domain.Category, error) {
+func (r *CategoryRepository) GetByIDForUser(ctx context.Context, id, userID uuid.UUID) (*domain.Category, error) {
 	query := `
 		SELECT id, user_id, name, transaction_type, created_at, updated_at, version
 		FROM categories
@@ -81,7 +81,7 @@ func (r *CategoryRepository) GetByIDForUser(id, userID uuid.UUID) (*domain.Categ
 
 	var category domain.Category
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, id, userID).Scan(
@@ -105,7 +105,7 @@ func (r *CategoryRepository) GetByIDForUser(id, userID uuid.UUID) (*domain.Categ
 	return &category, nil
 }
 
-func (r *CategoryRepository) GetByIDAndTypeForUser(id uuid.UUID, transactionType domain.TransactionType, userID uuid.UUID) (*domain.Category, error) {
+func (r *CategoryRepository) GetByIDAndTypeForUser(ctx context.Context, id uuid.UUID, transactionType domain.TransactionType, userID uuid.UUID) (*domain.Category, error) {
 	query := `
 		SELECT id, user_id, name, transaction_type, created_at, updated_at, version
 		FROM categories
@@ -118,7 +118,7 @@ func (r *CategoryRepository) GetByIDAndTypeForUser(id uuid.UUID, transactionType
 
 	var category domain.Category
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(

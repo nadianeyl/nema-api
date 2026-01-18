@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -28,7 +29,7 @@ func NewUserService(userRepo repository.UserRepository, tokenRepo repository.Tok
 	}
 }
 
-func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*UserResponse, error) {
+func (s *UserService) Register(ctx context.Context, req *RegisterUserRequest, wg *sync.WaitGroup) (*UserResponse, error) {
 	user := &domain.User{
 		Name:                      req.Name,
 		Email:                     req.Email,
@@ -41,12 +42,12 @@ func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*U
 		return nil, err
 	}
 
-	err = s.UserRepo.Insert(user)
+	err = s.UserRepo.Insert(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := s.TokenRepo.New(user.ID, 3*24*time.Hour, domain.ScopeActivation)
+	token, err := s.TokenRepo.New(ctx, user.ID, 3*24*time.Hour, domain.ScopeActivation)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +76,8 @@ func (s *UserService) Register(req *RegisterUserRequest, wg *sync.WaitGroup) (*U
 	return res, nil
 }
 
-func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) {
-	user, err := s.UserRepo.GetForToken(domain.ScopeActivation, req.TokenPlaintext)
+func (s *UserService) Activate(ctx context.Context, req *ActivateUserRequest) (*UserResponse, error) {
+	user, err := s.UserRepo.GetForToken(ctx, domain.ScopeActivation, req.TokenPlaintext)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):
@@ -88,12 +89,12 @@ func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) 
 
 	user.Activated = true
 
-	err = s.UserRepo.Update(user)
+	err = s.UserRepo.Update(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.TokenRepo.DeleteAllForUser(domain.ScopeActivation, user.ID)
+	err = s.TokenRepo.DeleteAllForUser(ctx, domain.ScopeActivation, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +112,8 @@ func (s *UserService) Activate(req *ActivateUserRequest) (*UserResponse, error) 
 	return res, nil
 }
 
-func (s *UserService) GetForToken(tokenScope, tokenPlaintext string) (*UserResponse, error) {
-	user, err := s.UserRepo.GetForToken(tokenScope, tokenPlaintext)
+func (s *UserService) GetForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*UserResponse, error) {
+	user, err := s.UserRepo.GetForToken(ctx, tokenScope, tokenPlaintext)
 	if err != nil {
 		return nil, err
 	}

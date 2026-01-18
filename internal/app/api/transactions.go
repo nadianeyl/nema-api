@@ -32,7 +32,7 @@ func (app *application) listTransactionsHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	res, metadata, err := app.services.Transactions.List(&req)
+	res, metadata, err := app.services.Transactions.List(r.Context(), &req)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 		return
@@ -61,7 +61,7 @@ func (app *application) addTransactionHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	res, err := app.services.Transactions.Add(&req)
+	res, err := app.services.Transactions.Add(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrInvalidInputValue):
@@ -92,7 +92,7 @@ func (app *application) getTransactionDetailHandler(w http.ResponseWriter, r *ht
 	req.ID = *id
 	req.UserID = httputil.ContextGetUserID(r)
 
-	res, err := app.services.Transactions.GetDetailByID(&req)
+	res, err := app.services.Transactions.GetDetailByID(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):
@@ -135,7 +135,7 @@ func (app *application) updateTransactionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	res, err := app.services.Transactions.Update(&req, v)
+	res, err := app.services.Transactions.Update(r.Context(), &req, v)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):
@@ -170,7 +170,7 @@ func (app *application) deleteTransactionHandler(w http.ResponseWriter, r *http.
 	req.ID = *id
 	req.UserID = httputil.ContextGetUserID(r)
 
-	err = app.services.Transactions.Delete(&req)
+	err = app.services.Transactions.Delete(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):

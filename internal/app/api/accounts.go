@@ -25,7 +25,7 @@ func (app *application) listAccountsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	res, metadata, err := app.services.Accounts.List(&req)
+	res, metadata, err := app.services.Accounts.List(r.Context(), &req)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 		return
@@ -54,7 +54,7 @@ func (app *application) addAccountHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	res, err := app.services.Accounts.Add(&req)
+	res, err := app.services.Accounts.Add(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrInvalidInputValue):
@@ -95,7 +95,7 @@ func (app *application) updateAccountHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	res, err := app.services.Accounts.Update(&req)
+	res, err := app.services.Accounts.Update(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):
@@ -128,7 +128,7 @@ func (app *application) deleteAccountHandler(w http.ResponseWriter, r *http.Requ
 	req.ID = *id
 	req.UserID = httputil.ContextGetUserID(r)
 
-	err = app.services.Accounts.Delete(&req)
+	err = app.services.Accounts.Delete(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound):
@@ -150,7 +150,7 @@ func (app *application) deleteAccountHandler(w http.ResponseWriter, r *http.Requ
 func (app *application) getNetWorthHandler(w http.ResponseWriter, r *http.Request) {
 	userID := httputil.ContextGetUserID(r)
 
-	res, err := app.services.Accounts.GetNetWorth(userID)
+	res, err := app.services.Accounts.GetNetWorth(r.Context(), userID)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 		return

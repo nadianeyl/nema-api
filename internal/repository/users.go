@@ -14,7 +14,7 @@ type UserRepository struct {
 	DB db
 }
 
-func (r *UserRepository) Insert(user *domain.User) error {
+func (r *UserRepository) Insert(ctx context.Context, user *domain.User) error {
 	query := `
 		INSERT INTO users (name, email, password_hash, activated, email_notifications_enabled)
 		VALUES ($1, $2, $3, $4, $5)
@@ -22,7 +22,7 @@ func (r *UserRepository) Insert(user *domain.User) error {
 
 	args := []any{user.Name, user.Email, user.Password.Hash, user.Activated, user.EmailNotificationsEnabled}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(
@@ -44,7 +44,7 @@ func (r *UserRepository) Insert(user *domain.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
 		SELECT id, name, email, password_hash, activated, email_notifications_enabled, created_at, updated_at, version
 		FROM users
@@ -52,7 +52,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 
 	var user domain.User
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, email).Scan(
@@ -78,7 +78,7 @@ func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) Update(user *domain.User) error {
+func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	query := `
 		UPDATE users
 		SET name = $1, email = $2, password_hash = $3, activated = $4, email_notifications_enabled = $5, updated_at = $6, version = version + 1
@@ -96,7 +96,7 @@ func (r *UserRepository) Update(user *domain.User) error {
 		user.Version,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(&user.UpdatedAt, &user.Version)
@@ -114,7 +114,7 @@ func (r *UserRepository) Update(user *domain.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetForToken(tokenScope, tokenPlaintext string) (*domain.User, error) {
+func (r *UserRepository) GetForToken(ctx context.Context, tokenScope, tokenPlaintext string) (*domain.User, error) {
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
@@ -130,7 +130,7 @@ func (r *UserRepository) GetForToken(tokenScope, tokenPlaintext string) (*domain
 
 	var user domain.User
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(

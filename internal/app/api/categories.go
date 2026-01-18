@@ -24,7 +24,7 @@ func (app *application) listCategoriesHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	res, metadata, err := app.services.Categories.List(&req)
+	res, metadata, err := app.services.Categories.List(r.Context(), &req)
 	if err != nil {
 		app.httpUtil.ServerErrorResponse(w, r, err)
 		return

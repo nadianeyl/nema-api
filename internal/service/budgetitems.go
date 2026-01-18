@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/repository"
 )
@@ -19,8 +21,8 @@ func NewBudgetItemService(budgetItemRepo repository.BudgetItemRepository, budget
 	}
 }
 
-func (s *BudgetItemService) Create(req *CreateBudgetItemRequest) (*BudgetItemResponse, error) {
-	budget, err := s.BudgetRepo.GetByID(req.BudgetID)
+func (s *BudgetItemService) Create(ctx context.Context, req *CreateBudgetItemRequest) (*BudgetItemResponse, error) {
+	budget, err := s.BudgetRepo.GetByID(ctx, req.BudgetID)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +31,7 @@ func (s *BudgetItemService) Create(req *CreateBudgetItemRequest) (*BudgetItemRes
 		return nil, domain.ErrUserNotAllowed
 	}
 
-	_, err = s.CategoryRepo.GetByIDAndTypeForUser(req.CategoryID, domain.TransactionTypeExpense, budget.UserID)
+	_, err = s.CategoryRepo.GetByIDAndTypeForUser(ctx, req.CategoryID, domain.TransactionTypeExpense, budget.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +42,7 @@ func (s *BudgetItemService) Create(req *CreateBudgetItemRequest) (*BudgetItemRes
 		LimitAmount: req.LimitAmount,
 	}
 
-	err = s.BudgetItemRepo.Insert(item)
+	err = s.BudgetItemRepo.Insert(ctx, item)
 	if err != nil {
 		return nil, err
 	}

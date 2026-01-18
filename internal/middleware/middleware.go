@@ -112,7 +112,7 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := m.userService.GetForToken(domain.ScopeAuthentication, token)
+		user, err := m.userService.GetForToken(r.Context(), domain.ScopeAuthentication, token)
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrRecordNotFound):

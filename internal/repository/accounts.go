@@ -17,7 +17,7 @@ type AccountRepository struct {
 	DB db
 }
 
-func (r *AccountRepository) GetAllForUser(userID uuid.UUID, class domain.AccountClass, filters domain.Filters) ([]*domain.Account, domain.Metadata, error) {
+func (r *AccountRepository) GetAllForUser(ctx context.Context, userID uuid.UUID, class domain.AccountClass, filters domain.Filters) ([]*domain.Account, domain.Metadata, error) {
 	query := `
 		SELECT COUNT(*) OVER(), id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
 		FROM accounts
@@ -33,7 +33,7 @@ func (r *AccountRepository) GetAllForUser(userID uuid.UUID, class domain.Account
 
 	args := []any{userID, classParam, filters.GetLimit(), filters.GetOffset()}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
@@ -77,7 +77,7 @@ func (r *AccountRepository) GetAllForUser(userID uuid.UUID, class domain.Account
 	return accounts, metadata, nil
 }
 
-func (r *AccountRepository) Insert(account *domain.Account) error {
+func (r *AccountRepository) Insert(ctx context.Context, account *domain.Account) error {
 	query := `
 		INSERT INTO accounts (user_id, name, class, currency_code, balance, is_budgeted)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -92,7 +92,7 @@ func (r *AccountRepository) Insert(account *domain.Account) error {
 		account.IsBudgeted,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(
@@ -114,7 +114,7 @@ func (r *AccountRepository) Insert(account *domain.Account) error {
 	return nil
 }
 
-func (r *AccountRepository) GetByID(id uuid.UUID) (*domain.Account, error) {
+func (r *AccountRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Account, error) {
 	query := `
 		SELECT id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
 		FROM accounts
@@ -122,7 +122,7 @@ func (r *AccountRepository) GetByID(id uuid.UUID) (*domain.Account, error) {
 
 	var account domain.Account
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(
@@ -149,7 +149,7 @@ func (r *AccountRepository) GetByID(id uuid.UUID) (*domain.Account, error) {
 	return &account, nil
 }
 
-func (r *AccountRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Account, error) {
+func (r *AccountRepository) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.Account, error) {
 	query := `
 		SELECT id, user_id, name, class, currency_code, balance, is_budgeted, created_at, updated_at, version
 		FROM accounts
@@ -158,7 +158,7 @@ func (r *AccountRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Account, err
 
 	var account domain.Account
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(
@@ -185,7 +185,7 @@ func (r *AccountRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Account, err
 	return &account, nil
 }
 
-func (r *AccountRepository) Update(account *domain.Account) error {
+func (r *AccountRepository) Update(ctx context.Context, account *domain.Account) error {
 	query := `
 		UPDATE accounts
 		SET name = $1, class = $2, is_budgeted = $3, updated_at = $4, version = version + 1
@@ -201,7 +201,7 @@ func (r *AccountRepository) Update(account *domain.Account) error {
 		account.Version,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(&account.UpdatedAt, &account.Version)
@@ -217,7 +217,7 @@ func (r *AccountRepository) Update(account *domain.Account) error {
 	return nil
 }
 
-func (r *AccountRepository) UpdateBalance(id uuid.UUID, amountChange decimal.Decimal) error {
+func (r *AccountRepository) UpdateBalance(ctx context.Context, id uuid.UUID, amountChange decimal.Decimal) error {
 	query := `
 		UPDATE accounts
 		SET balance = balance + $1, updated_at = $2
@@ -225,7 +225,7 @@ func (r *AccountRepository) UpdateBalance(id uuid.UUID, amountChange decimal.Dec
 
 	args := []any{amountChange, time.Now(), id}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	result, err := r.DB.ExecContext(ctx, query, args...)
@@ -245,12 +245,12 @@ func (r *AccountRepository) UpdateBalance(id uuid.UUID, amountChange decimal.Dec
 	return nil
 }
 
-func (r *AccountRepository) Delete(id uuid.UUID) error {
+func (r *AccountRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `
 		DELETE FROM accounts
 		WHERE id = $1`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	result, err := r.DB.ExecContext(ctx, query, id)
@@ -270,7 +270,7 @@ func (r *AccountRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (r *AccountRepository) GetNetWorthForUser(userID uuid.UUID) (*domain.NetWorth, error) {
+func (r *AccountRepository) GetNetWorthForUser(ctx context.Context, userID uuid.UUID) (*domain.NetWorth, error) {
 	query := `
 		SELECT
 			COALESCE(SUM(CASE WHEN class = 'cce' THEN balance ELSE 0 END), 0) as total_cce,
@@ -281,7 +281,7 @@ func (r *AccountRepository) GetNetWorthForUser(userID uuid.UUID) (*domain.NetWor
 
 	var netWorth domain.NetWorth
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, userID).Scan(
