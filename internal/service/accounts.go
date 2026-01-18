@@ -1,6 +1,10 @@
 package service
 
 import (
+	"context"
+
+	"github.com/google/uuid"
+
 	"github.com/nadianeyl/nema-api/internal/domain"
 	"github.com/nadianeyl/nema-api/internal/repository"
 )
@@ -15,8 +19,8 @@ func NewAccountService(accountRepo repository.AccountRepository) AccountService 
 	}
 }
 
-func (s *AccountService) List(req *ListAccountsRequest) ([]*AccountResponse, domain.Metadata, error) {
-	accounts, metadata, err := s.AccountRepo.GetAllForUser(req.UserID, req.Class, req.Filters)
+func (s *AccountService) List(ctx context.Context, req *ListAccountsRequest) ([]*AccountResponse, domain.Metadata, error) {
+	accounts, metadata, err := s.AccountRepo.GetAllForUser(ctx, req.UserID, req.Class, req.Filters)
 	if err != nil {
 		return nil, domain.Metadata{}, err
 	}
@@ -39,7 +43,7 @@ func (s *AccountService) List(req *ListAccountsRequest) ([]*AccountResponse, dom
 	return res, metadata, nil
 }
 
-func (s *AccountService) Add(req *AddAccountRequest) (*AccountResponse, error) {
+func (s *AccountService) Add(ctx context.Context, req *AddAccountRequest) (*AccountResponse, error) {
 	account := &domain.Account{
 		UserID:       req.UserID,
 		Name:         req.Name,
@@ -49,7 +53,7 @@ func (s *AccountService) Add(req *AddAccountRequest) (*AccountResponse, error) {
 		IsBudgeted:   req.IsBudgeted,
 	}
 
-	err := s.AccountRepo.Insert(account)
+	err := s.AccountRepo.Insert(ctx, account)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +73,8 @@ func (s *AccountService) Add(req *AddAccountRequest) (*AccountResponse, error) {
 	return res, nil
 }
 
-func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, error) {
-	account, err := s.AccountRepo.GetByID(req.ID)
+func (s *AccountService) Update(ctx context.Context, req *UpdateAccountRequest) (*AccountResponse, error) {
+	account, err := s.AccountRepo.GetByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +95,7 @@ func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, er
 		account.IsBudgeted = *req.IsBudgeted
 	}
 
-	err = s.AccountRepo.Update(account)
+	err = s.AccountRepo.Update(ctx, account)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +115,8 @@ func (s *AccountService) Update(req *UpdateAccountRequest) (*AccountResponse, er
 	return res, nil
 }
 
-func (s *AccountService) Delete(req *DeleteAccountRequest) error {
-	account, err := s.AccountRepo.GetByID(req.ID)
+func (s *AccountService) Delete(ctx context.Context, req *DeleteAccountRequest) error {
+	account, err := s.AccountRepo.GetByID(ctx, req.ID)
 	if err != nil {
 		return err
 	}
@@ -121,10 +125,26 @@ func (s *AccountService) Delete(req *DeleteAccountRequest) error {
 		return domain.ErrUserNotAllowed
 	}
 
-	err = s.AccountRepo.Delete(account.ID)
+	err = s.AccountRepo.Delete(ctx, account.ID)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *AccountService) GetNetWorth(ctx context.Context, userID uuid.UUID) (*GetNetWorthResponse, error) {
+	netWorth, err := s.AccountRepo.GetNetWorthForUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &GetNetWorthResponse{
+		CCE:        netWorth.CCE,
+		Investment: netWorth.Investment,
+		Liability:  netWorth.Liability,
+		Total:      netWorth.Total,
+	}
+
+	return res, nil
 }

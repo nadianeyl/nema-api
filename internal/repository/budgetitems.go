@@ -14,7 +14,7 @@ type BudgetItemRepository struct {
 	DB db
 }
 
-func (r *BudgetItemRepository) Insert(item *domain.BudgetItem) error {
+func (r *BudgetItemRepository) Insert(ctx context.Context, item *domain.BudgetItem) error {
 	query := `
 		INSERT INTO budget_items (budget_id, category_id, limit_amount)
 		VALUES ($1, $2, $3)
@@ -22,7 +22,7 @@ func (r *BudgetItemRepository) Insert(item *domain.BudgetItem) error {
 
 	args := []any{item.BudgetID, item.CategoryID, item.LimitAmount}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(
@@ -44,14 +44,14 @@ func (r *BudgetItemRepository) Insert(item *domain.BudgetItem) error {
 	return nil
 }
 
-func (r *BudgetItemRepository) GetByBudgetID(budgetID uuid.UUID) ([]*domain.BudgetItem, error) {
+func (r *BudgetItemRepository) GetByBudgetID(ctx context.Context, budgetID uuid.UUID) ([]*domain.BudgetItem, error) {
 	query := `
 		SELECT id, budget_id, category_id, limit_amount, created_at, updated_at, version
 		FROM budget_items
 		WHERE budget_id = $1
 		ORDER BY created_at ASC, id ASC`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	rows, err := r.DB.QueryContext(ctx, query, budgetID)

@@ -9,7 +9,8 @@
 
 - [Description](#description)
 - [Live Demo](#live-demo)
-- [Main Features](#main-features)
+- [Features](#features)
+- [Database Design](#database-design)
 - [Routes](#routes)
 - [Tech Stack](#tech-stack)
 - [Run Locally](#run-locally)
@@ -22,7 +23,7 @@
 
 **NEMA API** is the backend service for a personal finance management app that addresses the core problem of lack of spending awareness & incomplete financial picture that prevents individuals from achieving their financial goals. NEMA provides a simple system to track all financial transactions with minimal friction, monitor net worth across multiple accounts & asset classes, set monthly budget limits for expense categories, & get immediate visibility into spending patterns for informed financial decisions.
 
-This current version is the **Phase 1** implementation, focusing on core transaction tracking, account management, & budget monitoring capabilities.
+_This current version is the **Phase 1** implementation, focusing on core transaction tracking, account management, & budget monitoring capabilities._
 
 ## Live Demo
 
@@ -52,7 +53,7 @@ Check out the API here:
   - Automatic account balance updates
   - Filter by type, date range, category, & account
   - Search by transaction title
-  - Sort by date and amount
+  - Sort by date & amount
   - Update & delete transactions
 
 - **Category Management**
@@ -68,10 +69,180 @@ Check out the API here:
 
 ### Plan for Next Phase
 
-- Enhanced budget management (update and remove limits)
+- Enhanced budget management (update & remove limits)
 - Detailed net worth breakdown by account class
 - Monthly income & expense summaries
 - Email notifications for budget check-ins
+
+## Database Design
+
+[`^ back to top ^`](#table-of-contents)
+
+### Entities
+
+- **User**: Represents a person using the app.
+- **Token**: Represents tokens for user sessions & account activation.
+- **Account**: Represents a financial account (e.g., bank account, investment, credit card) owned by a user. Categorized by account class (Cash & Cash Equivalents, Investment Assets, Liabilities).
+- **Category**: Represents a transaction category (e.g., "Salary", "Groceries", "Transfer"). Can be system-default or user-defined, grouped by transaction type.
+- **Transaction**: Represents a financial transaction (income, expense, or transfer) with amount, date, & associated accounts.
+- **Budget**: Represents a monthly budget plan for a user with a specific time period.
+- **Budget Item**: Represents spending limits for specific expense categories within a budget.
+
+### Entity Relationship
+
+Users manage their financial data through accounts, categories, transactions, & budgets.
+
+```
+User (1) ─── (N) Account
+User (1) ─── (N) Category
+User (1) ─── (N) Transaction
+User (1) ─── (N) Budget
+User (1) ─── (N) Token
+
+Account (1) ─── (N) Transaction (as from_account)
+Account (1) ─── (N) Transaction (as to_account)
+
+Category (1) ─── (N) Transaction
+Category (1) ─── (N) Budget Item
+
+Budget (1) ─── (N) Budget Item
+```
+
+- `users` → `accounts`: **one-to-many**
+  - A user can have zero or many accounts
+  - Each account belongs to exactly one user
+
+- `users` → `categories`: **one-to-many**
+  - A user can have zero or many custom categories
+  - Each custom category belongs to exactly one user
+
+- `users` → `transactions`: **one-to-many**
+  - A user can have zero or many transactions
+  - Each transaction belongs to exactly one user
+
+- `accounts` → `transactions`: **one-to-many**
+  - An account can be the source for many expense/ transfer transactions
+  - An account can be the destination for many income/ transfer transactions
+  - Each transaction references one or two accounts depending on type
+
+- `categories` → `transactions`: **one-to-many**
+  - A category can be used in zero or many transactions
+  - Each transaction belongs to exactly one category
+
+- `users` → `budgets`: **one-to-many**
+  - A user can have zero or many budgets
+  - Each budget belongs to exactly one user
+
+- `budgets` → `budget_items`: **one-to-many**
+  - A budget can have zero or many budget items
+  - Each budget item belongs to exactly one budget
+
+- `categories` → `budget_items`: **one-to-many**
+  - A category can be tracked in zero or many budget items
+  - Each budget item tracks exactly one category
+
+- `users` → `tokens`: **one-to-many**
+  - A user can have zero or many tokens
+  - Each token belongs to exactly one user
+
+### Diagram
+
+```mermaid
+erDiagram
+  User ||--o{ Token : "has"
+  User ||--o{ Account : "owns"
+  User ||--o{ Category : "creates"
+  User ||--o{ Transaction : "records"
+  User ||--o{ Budget : "plans"
+  
+  Account ||--o{ Transaction : "from_account"
+  Account ||--o{ Transaction : "to_account"
+  
+  Category ||--o{ Transaction : "categorizes"
+  Category ||--o{ BudgetItem : "tracked_in"
+  
+  Budget ||--o{ BudgetItem : "contains"
+  
+  User {
+    string id PK
+    string name
+    string email UK
+    bytes password_hash
+    boolean activated
+    boolean email_notifications_enabled
+    timestamp created_at
+    timestamp updated_at
+    integer version
+  }
+  
+  Token {
+    bytes hash PK
+    string user_id FK
+    timestamp expiry
+    string scope
+  }
+  
+  Account {
+    string id PK
+    string user_id FK
+    string name
+    string class
+    string currency_code
+    decimal balance
+    boolean is_budgeted
+    timestamp created_at
+    timestamp updated_at
+    integer version
+  }
+  
+  Category {
+    string id PK
+    string user_id FK
+    string name
+    string transaction_type
+    timestamp created_at
+    timestamp updated_at
+    integer version
+  }
+  
+  Transaction {
+    string id PK
+    string user_id FK
+    string type
+    string category_id FK
+    decimal amount
+    timestamp date
+    string title
+    string notes
+    string from_account_id FK
+    string to_account_id FK
+    timestamp created_at
+    timestamp updated_at
+    integer version
+  }
+  
+  Budget {
+    string id PK
+    string user_id FK
+    string name
+    decimal available_budget
+    date start_date
+    date end_date
+    timestamp created_at
+    timestamp updated_at
+    integer version
+  }
+  
+  BudgetItem {
+    string id PK
+    string budget_id FK
+    string category_id FK
+    decimal limit_amount
+    timestamp created_at
+    timestamp updated_at
+    integer version
+  }
+```
 
 ## Routes
 
@@ -95,6 +266,7 @@ Check out the API here:
 | POST       | /api/v1/budgets              | Create a new budget.           |
 | GET        | /api/v1/budgets/{id}         | Get budget details.            |
 | POST       | /api/v1/budgets/{id}/items   | Create a new budget item.      |
+| GET        | /api/v1/net-worth            | Get net worth.                 |
 
 ## Tech Stack
 
@@ -151,10 +323,10 @@ Check out the API here:
   cd nema-api
   ```
 
-- Create a new `NEMA_DB_DSN` the following line to `$HOME/.profile` or `$HOME/.bashrc`.
+- Create a new `NEMA_DB_DSN` by adding the following line to `$HOME/.profile` or `$HOME/.bashrc`.
 
   ```bash
-  export NEMA_DB_DSN='postgres://postgres:<yourpassword>@localhost/nema?sslmode=disable'
+  export NEMA_DB_DSN='postgres://<username>:<password>@localhost/nema?sslmode=disable'
   ```
 
 - Run `source` command on the file that you’ve just edited to effect the change.

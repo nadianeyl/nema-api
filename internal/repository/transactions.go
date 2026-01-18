@@ -17,7 +17,7 @@ type TransactionRepository struct {
 	DB db
 }
 
-func (r *TransactionRepository) GetAllForUser(userID uuid.UUID, filters domain.TransactionFilters) ([]*domain.Transaction, domain.Metadata, error) {
+func (r *TransactionRepository) GetAllForUser(ctx context.Context, userID uuid.UUID, filters domain.TransactionFilters) ([]*domain.Transaction, domain.Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), id, user_id, type, category_id, amount, date, title, notes, from_account_id, to_account_id, created_at, updated_at, version
 		FROM transactions
@@ -68,7 +68,7 @@ func (r *TransactionRepository) GetAllForUser(userID uuid.UUID, filters domain.T
 		filters.GetOffset(),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)
@@ -115,7 +115,7 @@ func (r *TransactionRepository) GetAllForUser(userID uuid.UUID, filters domain.T
 	return transactions, metadata, nil
 }
 
-func (r *TransactionRepository) Insert(transaction *domain.Transaction) error {
+func (r *TransactionRepository) Insert(ctx context.Context, transaction *domain.Transaction) error {
 	query := `
 		INSERT INTO transactions (user_id, type, category_id, amount, date, title, notes, from_account_id, to_account_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -133,7 +133,7 @@ func (r *TransactionRepository) Insert(transaction *domain.Transaction) error {
 		transaction.ToAccountID,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(
@@ -150,7 +150,7 @@ func (r *TransactionRepository) Insert(transaction *domain.Transaction) error {
 	return nil
 }
 
-func (r *TransactionRepository) GetByID(id uuid.UUID) (*domain.Transaction, error) {
+func (r *TransactionRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Transaction, error) {
 	query := `
 		SELECT id, user_id, type, category_id, amount, date, title, notes, from_account_id, to_account_id, created_at, updated_at, version
 		FROM transactions
@@ -188,7 +188,7 @@ func (r *TransactionRepository) GetByID(id uuid.UUID) (*domain.Transaction, erro
 	return &transaction, nil
 }
 
-func (r *TransactionRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Transaction, error) {
+func (r *TransactionRepository) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.Transaction, error) {
 	query := `
 		SELECT id, user_id, type, category_id, amount, date, title, notes, from_account_id, to_account_id, created_at, updated_at, version
 		FROM transactions
@@ -197,7 +197,7 @@ func (r *TransactionRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Transact
 
 	var transaction domain.Transaction
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(
@@ -227,7 +227,7 @@ func (r *TransactionRepository) GetByIDForUpdate(id uuid.UUID) (*domain.Transact
 	return &transaction, nil
 }
 
-func (r *TransactionRepository) GetDetailByID(id uuid.UUID) (*domain.TransactionDetail, error) {
+func (r *TransactionRepository) GetDetailByID(ctx context.Context, id uuid.UUID) (*domain.TransactionDetail, error) {
 	query := `
 		SELECT t.id, t.user_id, t.type, t.category_id, t.amount, t.date, t.title, t.notes, t.from_account_id, t.to_account_id, t.created_at, t.updated_at, t.version,
 		c.id, c.name, fa.id, fa.name, ta.id, ta.name
@@ -245,7 +245,7 @@ func (r *TransactionRepository) GetDetailByID(id uuid.UUID) (*domain.Transaction
 		toAccountName   sql.NullString
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(
@@ -299,7 +299,7 @@ func (r *TransactionRepository) GetDetailByID(id uuid.UUID) (*domain.Transaction
 	return &detail, nil
 }
 
-func (r *TransactionRepository) Update(transaction *domain.Transaction) error {
+func (r *TransactionRepository) Update(ctx context.Context, transaction *domain.Transaction) error {
 	query := `
 		UPDATE transactions
 		SET type = $1, category_id = $2, amount = $3, date = $4, title = $5, notes = $6, from_account_id = $7, to_account_id = $8, updated_at = $9, version = version + 1
@@ -320,7 +320,7 @@ func (r *TransactionRepository) Update(transaction *domain.Transaction) error {
 		transaction.Version,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(&transaction.UpdatedAt, &transaction.Version)
@@ -336,12 +336,12 @@ func (r *TransactionRepository) Update(transaction *domain.Transaction) error {
 	return nil
 }
 
-func (r *TransactionRepository) Delete(id uuid.UUID) error {
+func (r *TransactionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `
 		DELETE FROM transactions
 		WHERE id = $1`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	result, err := r.DB.ExecContext(ctx, query, id)
@@ -361,7 +361,7 @@ func (r *TransactionRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (r *TransactionRepository) GetTotalSpentByCategoryAndDateRange(userID, categoryID uuid.UUID, startDate, endDate time.Time) (decimal.Decimal, error) {
+func (r *TransactionRepository) GetTotalSpentByCategoryAndDateRange(ctx context.Context, userID, categoryID uuid.UUID, startDate, endDate time.Time) (decimal.Decimal, error) {
 	query := `
 		SELECT COALESCE(SUM(t.amount), 0) as total_spent
 		FROM transactions t
@@ -382,7 +382,7 @@ func (r *TransactionRepository) GetTotalSpentByCategoryAndDateRange(userID, cate
 
 	var totalSpent decimal.Decimal
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := r.DB.QueryRowContext(ctx, query, args...).Scan(&totalSpent)

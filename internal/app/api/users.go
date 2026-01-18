@@ -25,7 +25,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	res, err := app.services.Users.Register(&req, &app.wg)
+	res, err := app.services.Users.Register(r.Context(), &req, &app.wg)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDuplicateEmail):
@@ -58,7 +58,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	res, err := app.services.Users.Activate(&req)
+	res, err := app.services.Users.Activate(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrInvalidOrExpiredToken):

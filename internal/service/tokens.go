@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/nadianeyl/nema-api/internal/domain"
@@ -22,8 +23,8 @@ func NewTokenService(userRepo repository.UserRepository, tokenRepo repository.To
 	}
 }
 
-func (s *TokenService) CreateAuthToken(req *CreateAuthTokenRequest) (*TokenResponse, error) {
-	user, err := s.UserRepo.GetByEmail(req.Email)
+func (s *TokenService) CreateAuthToken(ctx context.Context, req *CreateAuthTokenRequest) (*TokenResponse, error) {
+	user, err := s.UserRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (s *TokenService) CreateAuthToken(req *CreateAuthTokenRequest) (*TokenRespo
 		return nil, domain.ErrInvalidAuthCredentials
 	}
 
-	token, err := s.TokenRepo.New(user.ID, 24*time.Hour, domain.ScopeAuthentication)
+	token, err := s.TokenRepo.New(ctx, user.ID, 24*time.Hour, domain.ScopeAuthentication)
 	if err != nil {
 		return nil, err
 	}

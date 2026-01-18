@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/nadianeyl/nema-api/internal/helper"
@@ -22,8 +23,8 @@ func NewTxProvider(db *sql.DB) *TxProvider {
 	return &TxProvider{DB: db}
 }
 
-func (p *TxProvider) WithTx(txFn txFunc) error {
-	return helper.RunInTx(p.DB, func(tx *sql.Tx) error {
+func (p *TxProvider) WithTx(ctx context.Context, txFn txFunc) error {
+	return helper.RunInTx(ctx, p.DB, func(tx *sql.Tx) error {
 		adapters := Adapters{
 			CategoryRepo:    CategoryRepository{DB: tx},
 			AccountRepo:     AccountRepository{DB: tx},

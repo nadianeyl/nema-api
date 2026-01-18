@@ -27,7 +27,7 @@ func (app *application) createAuthTokenHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	res, err := app.services.Tokens.CreateAuthToken(&req)
+	res, err := app.services.Tokens.CreateAuthToken(r.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRecordNotFound), errors.Is(err, domain.ErrInvalidAuthCredentials):

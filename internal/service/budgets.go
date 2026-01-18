@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/govalues/decimal"
@@ -30,7 +31,7 @@ func NewBudgetService(
 	}
 }
 
-func (s *BudgetService) Create(req *CreateBudgetRequest) (*BudgetResponse, error) {
+func (s *BudgetService) Create(ctx context.Context, req *CreateBudgetRequest) (*BudgetResponse, error) {
 	startDate, _ := time.Parse("2006-01-02", req.StartDate)
 	endDate, _ := time.Parse("2006-01-02", req.EndDate)
 
@@ -42,7 +43,7 @@ func (s *BudgetService) Create(req *CreateBudgetRequest) (*BudgetResponse, error
 		EndDate:         endDate,
 	}
 
-	err := s.BudgetRepo.Insert(budget)
+	err := s.BudgetRepo.Insert(ctx, budget)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +62,8 @@ func (s *BudgetService) Create(req *CreateBudgetRequest) (*BudgetResponse, error
 	return res, nil
 }
 
-func (s *BudgetService) GetByID(req *GetBudgetDetailRequest) (*BudgetDetailResponse, error) {
-	budget, err := s.BudgetRepo.GetByID(req.ID)
+func (s *BudgetService) GetByID(ctx context.Context, req *GetBudgetDetailRequest) (*BudgetDetailResponse, error) {
+	budget, err := s.BudgetRepo.GetByID(ctx, req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func (s *BudgetService) GetByID(req *GetBudgetDetailRequest) (*BudgetDetailRespo
 		return nil, domain.ErrUserNotAllowed
 	}
 
-	items, err := s.BudgetItemRepo.GetByBudgetID(req.ID)
+	items, err := s.BudgetItemRepo.GetByBudgetID(ctx, req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +82,13 @@ func (s *BudgetService) GetByID(req *GetBudgetDetailRequest) (*BudgetDetailRespo
 	totalSpentAmount := decimal.Zero
 
 	for _, item := range items {
-		category, err := s.CategoryRepo.GetByIDForUser(item.CategoryID, budget.UserID)
+		category, err := s.CategoryRepo.GetByIDForUser(ctx, item.CategoryID, budget.UserID)
 		if err != nil {
 			return nil, err
 		}
 
 		spentAmount, err := s.TransactionRepo.GetTotalSpentByCategoryAndDateRange(
+			ctx,
 			item.CategoryID,
 			budget.UserID,
 			budget.StartDate,
